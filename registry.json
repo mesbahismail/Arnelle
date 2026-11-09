@@ -1,0 +1,117 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry.json",
+  "name": "rnl",
+  "homepage": "http://localhost:3000",
+  "items": [
+    {
+      "name": "rnl-native",
+      "type": "registry:block",
+      "title": "RNL · React Native social app",
+      "description": "Expo SDK 54 native social app with onboarding, discovery, communities, local messages, stories, and a live-room demo. See rnl/README.md after installation.",
+      "dependencies": [
+        "@expo/metro-runtime@~6.1.2",
+        "@expo/vector-icons@^15.0.3",
+        "@react-native-async-storage/async-storage@2.2.0",
+        "expo@~54.0.0",
+        "expo-asset@~12.0.14",
+        "expo-audio@~1.1.1",
+        "expo-blur@~15.0.7",
+        "expo-camera@~17.0.9",
+        "expo-file-system@~19.0.24",
+        "expo-font@~14.0.12",
+        "expo-haptics@~15.0.7",
+        "expo-image-picker@~17.0.8",
+        "expo-linear-gradient@~15.0.7",
+        "expo-status-bar@~3.0.8",
+        "expo-video@~3.0.11",
+        "react@19.1.0",
+        "react-dom@^19.1.0",
+        "react-native@0.81.5",
+        "react-native-safe-area-context@~5.6.0",
+        "react-native-svg@15.12.1",
+        "react-native-web@^0.21.4"
+      ],
+      "files": [
+        {
+          "path": "native/App.tsx",
+          "type": "registry:file",
+          "target": "rnl/App.tsx"
+        },
+        {
+          "path": "native/src/ui.tsx",
+          "type": "registry:file",
+          "target": "rnl/src/ui.tsx"
+        },
+        {
+          "path": "native/src/preview-chrome.tsx",
+          "type": "registry:file",
+          "target": "rnl/src/preview-chrome.tsx"
+        },
+        {
+          "path": "native/src/data.ts",
+          "type": "registry:file",
+          "target": "rnl/src/data.ts"
+        },
+        {
+          "path": "native/src/store.ts",
+          "type": "registry:file",
+          "target": "rnl/src/store.ts"
+        },
+        {
+          "path": "native/src/media.ts",
+          "type": "registry:file",
+          "target": "rnl/src/media.ts"
+        },
+        {
+          "path": "native/src/services.ts",
+          "type": "registry:file",
+          "target": "rnl/src/services.ts"
+        },
+        {
+          "path": "native/README.md",
+          "type": "registry:file",
+          "target": "rnl/README.md"
+        },
+        {
+          "path": "native/app.json",
+          "type": "registry:file",
+          "target": "rnl/app-config.example.json"
+        }
+      ],
+      "meta": {
+        "license": "MIT",
+        "framework": "expo",
+        "sdk": 54,
+        "setup": "Export rnl/App.tsx from your app entry. Merge the included app-config.example.json plugins and permissions, then rebuild your native client."
+      }
+    },
+    {
+      "name": "rnl-button",
+      "type": "registry:ui",
+      "title": "RNL gradient button",
+      "description": "Source-owned gradient, outline, and ghost buttons using CVA.",
+      "dependencies": [
+        "class-variance-authority",
+        "clsx",
+        "tailwind-merge"
+      ],
+      "files": [
+        {
+          "path": "src/components/ui/button.tsx",
+          "type": "registry:file",
+          "target": "components/ui/rnl-button.tsx"
+        },
+        {
+          "path": "src/lib/utils.ts",
+          "type": "registry:file",
+          "target": "components/ui/rnl-utils.ts"
+        },
+        {
+          "path": "registry/rnl-button.css",
+          "type": "registry:file",
+          "target": "components/ui/rnl-button.css"
+        }
+      ]
+    }
+  ]
+}

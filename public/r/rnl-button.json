@@ -1,0 +1,32 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "rnl-button",
+  "type": "registry:ui",
+  "title": "RNL gradient button",
+  "description": "Source-owned gradient, outline, and ghost buttons using CVA.",
+  "dependencies": [
+    "class-variance-authority",
+    "clsx",
+    "tailwind-merge"
+  ],
+  "files": [
+    {
+      "path": "src/components/ui/button.tsx",
+      "type": "registry:file",
+      "target": "components/ui/rnl-button.tsx",
+      "content": "import './rnl-button.css';\nimport * as React from \"react\";\nimport { cva, type VariantProps } from \"class-variance-authority\";\nimport { cn } from \"./rnl-utils\";\nconst buttonVariants = cva(\"button\", {\n  variants: {\n    variant: {\n      default: \"button-gradient\",\n      outline: \"button-outline\",\n      ghost: \"button-ghost\",\n    },\n    size: { default: \"\", small: \"button-small\", icon: \"button-icon\" },\n  },\n  defaultVariants: { variant: \"default\", size: \"default\" },\n});\nexport interface ButtonProps\n  extends\n    React.ButtonHTMLAttributes<HTMLButtonElement>,\n    VariantProps<typeof buttonVariants> {}\nexport const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(\n  ({ className, variant, size, ...props }, ref) => (\n    <button\n      ref={ref}\n      className={cn(buttonVariants({ variant, size, className }))}\n      {...props}\n    />\n  ),\n);\nButton.displayName = \"Button\";\nexport { buttonVariants };\n"
+    },
+    {
+      "path": "src/lib/utils.ts",
+      "type": "registry:file",
+      "target": "components/ui/rnl-utils.ts",
+      "content": "import { clsx, type ClassValue } from \"clsx\";\nimport { twMerge } from \"tailwind-merge\";\nexport function cn(...inputs: ClassValue[]) {\n  return twMerge(clsx(inputs));\n}\n"
+    },
+    {
+      "path": "registry/rnl-button.css",
+      "type": "registry:file",
+      "target": "components/ui/rnl-button.css",
+      "content": ".button{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:44px;padding:0 23px;border-radius:32px;border:0;font:600 14px system-ui;cursor:pointer;color:#fff}.button:disabled{opacity:.4;cursor:not-allowed}.button:focus-visible{outline:2px solid #ffc04b;outline-offset:4px}.button-gradient{background:linear-gradient(160deg,#ffc04b,#f77b43 45%,#df326f);box-shadow:inset 0 1px #ffe3b7}.button-outline{background:transparent;border:1px solid #77777d}.button-ghost{background:transparent;color:#aaaab1}.button-small{min-height:34px;font-size:12px;padding:0 14px}.button-icon{height:44px;width:44px;padding:0}"
+    }
+  ]
+}

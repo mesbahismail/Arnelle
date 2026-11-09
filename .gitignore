@@ -39,3 +39,11 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# RNL generated native output
+native/node_modules/
+native/.expo/
+native/dist/
+native/ios/
+native/android/
+*.tsbuildinfo

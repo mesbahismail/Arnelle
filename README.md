@@ -1,36 +1,54 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# RNL — React Native iOS template
 
-## Getting Started
+One React Native application, following the supplied iPhone screens. The browser preview renders the **same `native/App.tsx`** inside a 393 × 852 iPhone viewport. There is no separate desktop UI.
 
-First, run the development server:
+## Preview on localhost
 
-```bash
+```sh
+npm install
+npm --prefix native install
+npm run preview:build
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open http://localhost:3000. On desktop the iPhone screen stays at its original proportions and scales down only when necessary to fit the window. On a phone it fills the viewport. Re-run `npm run preview:build` after changing native screens. `npm run build` rebuilds the preview automatically.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Run as a native iOS app
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```sh
+cd native
+npm install
+npm run ios
+```
 
-## Learn More
+This launches the Expo app in an available iPhone Simulator. For a physical iPhone, use a compatible Expo Go client or an Expo development build; see [native setup](native/README.md). Native iOS uses the real status bar, safe areas, and home indicator. Browser-only simulated chrome lives in `native/src/preview-chrome.tsx` and is never rendered on iOS.
 
-To learn more about Next.js, take a look at the following resources:
+## Included flows
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Onboarding → interests → follow creators → Discover. Browse/search, communities and local posts, messaging, profile/followers/saved reels, camera/library → story editing → music selection → audience → publish, and a live-room demo with point-based gifts.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+All screens use React Native primitives. Native UI, data, persistence, media helpers, and preview share one source. The palette and spacing tokens are in `native/src/data.ts`.
 
-## Deploy on Vercel
+## Validate and distribute
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+```sh
+npm run lint
+npm run typecheck
+npm --prefix native run typecheck
+npm run preview:build
+npm test
+npm run build
+npm --prefix native run export:ios
+npm run registry:build
+npm run template:pack
+```
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+The runtime smoke test executes the actual Expo web bundle and checks onboarding, all five tabs, and the profile menu. It is not a visual screenshot test.
+
+The downloadable native source is `public/rnl-template.zip`. Self-hostable shadcn registry packages are in `public/r/`; the native package is `/r/rnl-native.json`. Registry distribution does not convert native controls into DOM-based shadcn widgets. No official directory listing is claimed.
+
+## Demo boundaries
+
+Messages, posts, follows, saved reels, story metadata, and gift credits are local demo state. Live broadcasting, cloud uploads, remote messaging, video compositing, and real payments require a backend. Integration contracts are in `native/src/services.ts`.
+
+Code and original avatars/audio are MIT licensed. See [LICENSE](LICENSE) and [ASSETS.md](ASSETS.md) for separate photo and video licenses. Photos are demo assets; the original image files from the reference screenshots were not supplied separately.

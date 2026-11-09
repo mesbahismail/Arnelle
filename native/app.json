@@ -1,0 +1,44 @@
+{
+  "expo": {
+    "name": "RNL",
+    "slug": "rnl",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "dark",
+    "scheme": "rnl",
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.rnl.template",
+      "infoPlist": {
+        "NSCameraUsageDescription": "Use your camera to capture a story.",
+        "NSPhotoLibraryUsageDescription": "Choose a photo to share in a story.",
+        "NSMicrophoneUsageDescription": "Record audio with your videos."
+      }
+    },
+    "plugins": [
+      "expo-video",
+      "expo-audio",
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Allow RNL to capture your stories."
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Allow RNL to choose photos for your stories."
+        }
+      ]
+    ],
+    "splash": {
+      "backgroundColor": "#141416",
+      "image": "./assets/splash.png",
+      "resizeMode": "contain"
+    },
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "icon": "./assets/icon.png"
+  }
+}

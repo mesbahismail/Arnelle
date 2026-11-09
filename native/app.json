@@ -29,6 +29,14 @@
         {
           "photosPermission": "Allow RNL to choose photos for your stories."
         }
+      ],
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/splash.png",
+          "imageWidth": 108,
+          "backgroundColor": "#141416"
+        }
       ]
     ],
     "splash": {
@@ -36,9 +44,7 @@
       "image": "./assets/splash.png",
       "resizeMode": "contain"
     },
-    "assetBundlePatterns": [
-      "**/*"
-    ],
+    "assetBundlePatterns": ["**/*"],
     "icon": "./assets/icon.png"
   }
 }

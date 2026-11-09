@@ -25,3 +25,7 @@ export const demoVideoUrl =
   "https://d23dyxeqlo5psv.cloudfront.net/big_buck_bunny.mp4";
 /** Set to your server-issued HLS URL to enable live playback. */
 export const livePlaybackUrl: string | null = null;
+
+/** CC0 flower-and-bee footage from MDN, looped for the local live-room preview. */
+export const natureDemoVideoUrl =
+  "https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4";

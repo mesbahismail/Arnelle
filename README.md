@@ -1,5 +1,15 @@
 # RNL — React Native iOS template
 
+<!-- mesbah-lab-credit -->
+> **A Mesbah Lab freebie.** Designed and coded by us at [Mesbah Lab](https://mesbahlab.net).
+>
+> **More freebies:** [mesbahlab.net](https://mesbahlab.net)
+>
+> **Follow us:** [Instagram](https://www.instagram.com/themesbahlab/) · [X](https://x.com/mesbahlab) · [Facebook](https://www.facebook.com/profile.php?id=1421874334341579) · [Pinterest](https://www.pinterest.com/mesbahlab/) · [YouTube](https://www.youtube.com/channel/UCyPo3LFW1Xv8DkcEnRdB7Ug) · [Behance](https://www.behance.net/mesbahismail) · [GitHub](https://github.com/mesbahismail)
+>
+> **Enjoying this freebie?** [Support us with a donation on PayPal](https://paypal.me/mesbahlab). Your tip keeps designs free for everyone.
+<!-- /mesbah-lab-credit -->
+
 One React Native application, following the supplied iPhone screens. The browser preview renders the **same `native/App.tsx`** inside a 393 × 852 iPhone viewport. There is no separate desktop UI.
 
 ## Preview on localhost
@@ -25,7 +35,9 @@ This launches the Expo app in an available iPhone Simulator. For a physical iPho
 
 ## Included flows
 
-Onboarding → interests → follow creators → Discover. Browse/search, communities and local posts, messaging, profile/followers/saved reels, camera/library → story editing → music selection → audience → publish, and a live-room demo with point-based gifts.
+Animated splash → welcome → demo login / sign-up / recovery → setup → onboarding → interests → follow creators → Discover. Browse/search, communities and local posts, messaging, profile/followers/saved reels, camera/library → story editing → music selection → audience → publish, and a live-room demo with looping nature video, incoming fading comments, floating hearts, and point-based gifts.
+
+The reference-inspired Arnelle bird mark is shared by the welcome screen, splash, app icon, and browser icon. Press feedback and screen transitions respect Reduce Motion. Demo login: **arnelle / demo1234**. Passwords are never persisted. Social login and recovery explicitly preview the flow without connecting accounts or sending email.
 
 All screens use React Native primitives. Native UI, data, persistence, media helpers, and preview share one source. The palette and spacing tokens are in `native/src/data.ts`.
 
@@ -43,12 +55,12 @@ npm run registry:build
 npm run template:pack
 ```
 
-The runtime smoke test executes the actual Expo web bundle and checks onboarding, all five tabs, and the profile menu. It is not a visual screenshot test.
+The runtime smoke test executes the actual Expo web bundle and checks authentication validation, recovery, setup, onboarding, all five tabs, logout, and the live room. It is not a visual screenshot test.
 
 The downloadable native source is `public/rnl-template.zip`. Self-hostable shadcn registry packages are in `public/r/`; the native package is `/r/rnl-native.json`. Registry distribution does not convert native controls into DOM-based shadcn widgets. No official directory listing is claimed.
 
 ## Demo boundaries
 
-Messages, posts, follows, saved reels, story metadata, and gift credits are local demo state. Live broadcasting, cloud uploads, remote messaging, video compositing, and real payments require a backend. Integration contracts are in `native/src/services.ts`.
+Authentication, messages, posts, follows, saved reels, story metadata, and gift credits are local demo state. Live broadcasting, cloud uploads, remote messaging, video compositing, and real payments require a backend. Integration contracts are in `native/src/services.ts`.
 
 Code and original avatars/audio are MIT licensed. See [LICENSE](LICENSE) and [ASSETS.md](ASSETS.md) for separate photo and video licenses. Photos are demo assets; the original image files from the reference screenshots were not supplied separately.

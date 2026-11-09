@@ -1,5 +1,15 @@
 # RNL · React Native for iOS
 
+<!-- mesbah-lab-credit -->
+> **A Mesbah Lab freebie.** Designed and coded by us at [Mesbah Lab](https://mesbahlab.net).
+>
+> **More freebies:** [mesbahlab.net](https://mesbahlab.net)
+>
+> **Follow us:** [Instagram](https://www.instagram.com/themesbahlab/) · [X](https://x.com/mesbahlab) · [Facebook](https://www.facebook.com/profile.php?id=1421874334341579) · [Pinterest](https://www.pinterest.com/mesbahlab/) · [YouTube](https://www.youtube.com/channel/UCyPo3LFW1Xv8DkcEnRdB7Ug) · [Behance](https://www.behance.net/mesbahismail) · [GitHub](https://github.com/mesbahismail)
+>
+> **Enjoying this freebie?** [Support us with a donation on PayPal](https://paypal.me/mesbahlab). Your tip keeps designs free for everyone.
+<!-- /mesbah-lab-credit -->
+
 A free, MIT-licensed social app starter built with Expo SDK 54, React Native 0.81, and TypeScript. Native components, real iOS safe areas, system status bar, system home indicator, haptics, camera, photo library, video, audio, and local persistence.
 
 ## Run
@@ -21,17 +31,21 @@ npm run export:ios
 
 ## Flows
 
-- First launch: birthday, gender, nationality, language → interests → creators → Discover.
+- First launch: animated bird splash → welcome → login / sign-up / recovery → setup intro → birthday, gender, nationality, language → interests → creators → Discover.
 - Discover → reel playback or live demo room → follow, like, save, comments, and gift sheet. Gift credits debit only when sufficient balance remains.
 - Browse → search reels, hashtags, and accounts. Saved reels are available under Profile → Menu.
 - Communities → join / leave → community feed → publish a local post.
 - Messaging → conversation → send locally persisted messages.
 - Camera → real camera or photo library / demo capture → caption, stickers, tint filter, music → draggable audio selection → audience → publish to profile.
-- Profile → followers, edit profile, menu, preferences, and restart onboarding.
+- Profile → followers, edit profile, menu, preferences, and logout. Settings can restart personalization.
+- Live demo: looping CC0 flower-and-bee footage, incoming comments with fade transitions, floating hearts, and gifts. Demo updates pause when the app goes to the background.
 
 ## Template architecture
 
 - `App.tsx`: screen orchestration and flows.
+- `src/entry-flow.tsx`: validated local demo authentication and setup. Demo login is `arnelle` / `demo1234`; passwords and email are never persisted. Stay logged in remembers a non-sensitive demo identity only. This is not an authentication boundary.
+- `src/brand.tsx`: shared vector bird mark. `assets/icon.png` and `assets/splash.png` use the same mark.
+- `src/motion.tsx`: press springs, screen reveals, fading comments, and floating hearts with Reduce Motion support.
 - `src/ui.tsx`: reusable buttons, icon buttons, headers, avatars, search fields, sheets, and section headings.
 - `src/data.ts`: fixtures, original avatars, palette, and spacing tokens (2, 4, 8, 16, 23, 24, 32, 48).
 - `src/store.ts`: versioned AsyncStorage persistence and default demo state.
@@ -44,7 +58,9 @@ The home indicator and status bar are rendered by iOS itself. There is no duplic
 
 The template is a functioning **local demo**, with no accounts or remote server. Messaging does not send to other people. Publish saves a story locally; it does not upload or composite a video. Caption, tint, audio offset, and audience are stored as story metadata. You can render that metadata in a viewer or send it to a media composition service. Demo privacy preferences do not enforce server authorization.
 
-Implement `SocialBackend` in `src/services.ts` for auth, messages, uploads, comments, and authoritative gift balances. Set `livePlaybackUrl` to a server-issued HLS URL for live playback. Broadcasting requires a provider SDK, server-created credentials, and authorization. Never put provider secrets in the app. Gift points are fictional and no payment processing is included.
+Implement `SocialBackend` in `src/services.ts` for messages, uploads, comments, and authoritative gift balances. Replace the demo session handlers in `src/entry-flow.tsx` with your authentication provider and secure token storage. Configure Google/Facebook OAuth and email recovery on your backend.
+
+Set `livePlaybackUrl` to a server-issued HLS URL for live playback. Broadcasting requires a provider SDK, server-created credentials, and authorization. Never put provider secrets in the app. Gift points are fictional and no payment processing is included.
 
 All fictional songs preview the original generated melody. Replace these fixtures with your own licensed tracks. Remote photo/video fixtures require internet. Camera and filesystem behavior must be checked on a real iPhone before release.
 
@@ -56,7 +72,7 @@ This app is also packaged as `/r/rnl-native.json` by the companion preview. In a
 npx shadcn@latest add https://YOUR_HOST/r/rnl-native.json
 ```
 
-The package creates `rnl/App.tsx` and `rnl/src/*` without replacing your entry point. Export it from your app entry (`export { default } from './rnl/App'`), or render it from a route. Merge the camera, photo library, audio, and video plugin/permission configuration from the included setup guide into your app config, then rebuild your native client. Use `npx expo install --fix` to keep dependency versions aligned with your Expo SDK.
+The package creates `rnl/App.tsx` and `rnl/src/*` without replacing your entry point. Export it from your app entry (`export { default } from './rnl/App'`), or render it from a route. Merge the camera, photo library, audio, and video plugin/permission configuration from the included setup guide into your app config, then rebuild your native client. The ZIP includes the configured native splash assets; when installing through the registry, add your own splash image and configure `expo-splash-screen` in your app config. Use `npx expo install --fix` to keep dependency versions aligned with your Expo SDK.
 
 This is a self-hosted, schema-compatible registry package; it is not a claim of listing in shadcn's official directory.
 

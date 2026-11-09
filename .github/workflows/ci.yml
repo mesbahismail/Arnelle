@@ -1,0 +1,25 @@
+name: Validate template
+on:
+  push:
+  pull_request:
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            native/package-lock.json
+      - run: npm ci
+      - run: npm --prefix native ci
+      - run: npm run lint
+      - run: npm --prefix native run typecheck
+      - run: npm run build
+      - run: npm test
+      - run: npm --prefix native run export:ios
+      - run: npm run registry:build
+      - run: npm run template:pack

@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
+  AppState,
   Alert,
   Image,
   KeyboardAvoidingView,
@@ -23,7 +24,7 @@ import {
   useSafeAreaInsets,
 } from "react-native-safe-area-context";
 import { EntryFlow, clearDemoSession } from "./src/entry-flow";
-import { Reveal, FloatingHearts } from "./src/motion";
+import { Reveal, FloatingHearts, LiveComment } from "./src/motion";
 import { PreviewChrome } from "./src/preview-chrome";
 import { StatusBar } from "expo-status-bar";
 import { LinearGradient } from "expo-linear-gradient";
@@ -60,7 +61,11 @@ import {
   type IconName,
 } from "./src/ui";
 import { useDemoStore } from "./src/store";
-import { demoVideoUrl, livePlaybackUrl } from "./src/services";
+import {
+  demoVideoUrl,
+  livePlaybackUrl,
+  natureDemoVideoUrl,
+} from "./src/services";
 import { createDemoMelody, persistStoryPhoto } from "./src/media";
 type Tab = "Discover" | "Browse" | "Communities" | "Messaging" | "Profile";
 type Screen =
@@ -1674,7 +1679,13 @@ function RNL() {
                   ],
                 ] as [IconName, string, () => void, number?][]
               ).map(([icon, label, action, count]) => (
-                <Pressable key={label} style={st.menuRow} onPress={action}>
+                <Pressable
+                  key={label}
+                  accessibilityRole="button"
+                  accessibilityLabel={label}
+                  style={st.menuRow}
+                  onPress={action}
+                >
                   <Icon name={icon} color={colors.accent} />
                   <Text style={[s.text, { flex: 1, fontSize: 18 }]}>
                     {label}
@@ -1927,6 +1938,7 @@ function RNL() {
                 ))}
               </View>
               <Action
+                label="Confirm gift"
                 disabled={state.points < gifts[gift].points}
                 style={{ marginTop: 24 }}
                 onPress={() => {
@@ -1996,10 +2008,11 @@ function ReelViewer({
   giftsSent: string[];
 }) {
   const player = useVideoPlayer(
-    reel.live ? livePlaybackUrl : demoVideoUrl,
+    reel.live ? livePlaybackUrl || natureDemoVideoUrl : demoVideoUrl,
     (p) => {
       p.loop = true;
-      if (!reel.live) p.play();
+      p.muted = true;
+      p.play();
     },
   );
   const [draft, setDraft] = useState("");
@@ -2012,10 +2025,44 @@ function ReelViewer({
     return () => sub.remove();
   }, [player]);
   const [comments, setComments] = useState([
-    { user: "anhild", text: "Can’t wait to join you" },
-    { user: "nara", text: "Too beautiful to describe!! 😍" },
-    { user: "brinhildr", text: "Amazing view!" },
+    { id: "initial-1", user: "anhild", text: "Can’t wait to join you" },
+    { id: "initial-2", user: "nara", text: "Too beautiful to describe!! 😍" },
+    { id: "initial-3", user: "brinhildr", text: "Amazing view!" },
   ]);
+  useEffect(() => {
+    const incoming = [
+      { user: "sara", text: "A little moment of peace 🌿" },
+      { user: "talia", text: "Nature never stops surprising me" },
+      { user: "daria", text: "That little bee! 🐝" },
+      { user: "mariam", text: "The colors are beautiful 🌸" },
+      { user: "nara", text: "Could watch this all day 💛" },
+      { user: "brookfan", text: "Thanks for sharing this moment!" },
+    ];
+    let index = 0;
+    let foreground =
+      AppState.currentState !== "background" &&
+      AppState.currentState !== "inactive";
+    const subscription = AppState.addEventListener("change", (next) => {
+      foreground = next === "active";
+      if (foreground) player.play();
+      else player.pause();
+    });
+    const timer = reel.live
+      ? setInterval(() => {
+          if (!foreground) return;
+          const comment = incoming[index % incoming.length];
+          setComments((previous) => [
+            ...previous.slice(-3),
+            { ...comment, id: `incoming-${index++}-${Date.now()}` },
+          ]);
+          setHeartBurst((value) => value + 1);
+        }, 3800)
+      : null;
+    return () => {
+      if (timer) clearInterval(timer);
+      subscription.remove();
+    };
+  }, [reel.live, player]);
   return (
     <View style={s.root}>
       <StatusBar style="light" />
@@ -2023,7 +2070,7 @@ function ReelViewer({
         source={{ uri: photos[reel.image] }}
         style={StyleSheet.absoluteFillObject}
       />
-      {(!reel.live || livePlaybackUrl) && !error && (
+      {!error && (
         <VideoView
           player={player}
           style={StyleSheet.absoluteFillObject}
@@ -2081,13 +2128,13 @@ function ReelViewer({
         </View>
         {reel.live && (
           <View style={{ padding: 16, gap: 9, alignItems: "flex-start" }}>
-            {comments.slice(-4).map((c, i) => (
-              <View key={i} style={st.liveComment}>
+            {comments.slice(-4).map((c) => (
+              <LiveComment key={c.id} style={st.liveComment}>
                 <Text style={[s.text, { fontWeight: "600" }]}>@{c.user}</Text>
                 <Text style={[s.text, { marginTop: 6, fontSize: 14 }]}>
                   {c.text}
                 </Text>
-              </View>
+              </LiveComment>
             ))}
           </View>
         )}
@@ -2096,13 +2143,18 @@ function ReelViewer({
           {reel.live ? (
             <>
               <TextInput
+                accessibilityLabel="Live comment"
                 value={draft}
                 onChangeText={setDraft}
                 onSubmitEditing={() => {
                   if (draft.trim()) {
                     setComments((p) => [
-                      ...p,
-                      { user: "you", text: draft.trim() },
+                      ...p.slice(-3),
+                      {
+                        id: `you-${Date.now()}`,
+                        user: "you",
+                        text: draft.trim(),
+                      },
                     ]);
                     setDraft("");
                   }
@@ -2119,7 +2171,11 @@ function ReelViewer({
                   },
                 ]}
               />
-              <IconButton name="star" label="Send gift" onPress={onGift} />
+              <IconButton
+                name="gift-outline"
+                label="Send gift"
+                onPress={onGift}
+              />
               <IconButton
                 gradient
                 name={draft.trim() ? "send" : "heart"}
@@ -2128,8 +2184,12 @@ function ReelViewer({
                 onPress={() => {
                   if (draft.trim()) {
                     setComments((p) => [
-                      ...p,
-                      { user: "you", text: draft.trim() },
+                      ...p.slice(-3),
+                      {
+                        id: `you-${Date.now()}`,
+                        user: "you",
+                        text: draft.trim(),
+                      },
                     ]);
                     setDraft("");
                   } else {

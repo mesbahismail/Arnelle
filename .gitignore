@@ -47,3 +47,5 @@ native/dist/
 native/ios/
 native/android/
 *.tsbuildinfo
+
+/.next-dev/

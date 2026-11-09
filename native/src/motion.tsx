@@ -164,3 +164,56 @@ export function FloatingHearts({ burst }: { burst: number }) {
     </Animated.View>
   );
 }
+
+/** New comments rise into the room, then gently fade as the conversation moves on. */
+export function LiveComment({
+  children,
+  style,
+}: {
+  children: React.ReactNode;
+  style?: StyleProp<ViewStyle>;
+}) {
+  const progress = useRef(new Animated.Value(0)).current;
+  const reduced = useReducedMotion();
+  useEffect(() => {
+    if (reduced) {
+      progress.setValue(1);
+      return;
+    }
+    const animation = Animated.sequence([
+      Animated.timing(progress, {
+        toValue: 1,
+        duration: 380,
+        useNativeDriver: nativeDriver,
+      }),
+      Animated.delay(9500),
+      Animated.timing(progress, {
+        toValue: 0.25,
+        duration: 1800,
+        useNativeDriver: nativeDriver,
+      }),
+    ]);
+    animation.start();
+    return () => animation.stop();
+  }, [progress, reduced]);
+  return (
+    <Animated.View
+      style={[
+        style,
+        {
+          opacity: progress,
+          transform: [
+            {
+              translateY: progress.interpolate({
+                inputRange: [0, 1],
+                outputRange: [12, 0],
+              }),
+            },
+          ],
+        },
+      ]}
+    >
+      {children}
+    </Animated.View>
+  );
+}

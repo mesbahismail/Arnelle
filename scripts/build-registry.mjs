@@ -47,7 +47,10 @@ native.files.push({
   content: JSON.stringify(
     {
       expo: {
-        plugins: JSON.parse(await read("native/app.json")).expo.plugins,
+        plugins: JSON.parse(await read("native/app.json")).expo.plugins.filter(
+          (plugin) =>
+            !Array.isArray(plugin) || plugin[0] !== "expo-splash-screen",
+        ),
         ios: {
           infoPlist: JSON.parse(await read("native/app.json")).expo.ios
             .infoPlist,

@@ -144,7 +144,7 @@ export function CaptureScreen({
           style={c.tool}
           onPress={onClose}
         >
-          <Icon name="close" size={24} />
+          <Icon name="close" size={21} />
         </Pressable>
         <Pressable
           accessibilityRole="button"
@@ -153,7 +153,7 @@ export function CaptureScreen({
           style={c.tool}
           onPress={() => setFlash((value) => !value)}
         >
-          <Icon name={flash ? "flash" : "flash-off"} size={24} />
+          <Icon name={flash ? "flash" : "flash-off"} size={21} />
         </Pressable>
         <Pressable
           accessibilityRole="button"
@@ -177,7 +177,7 @@ export function CaptureScreen({
             setSettings(true);
           }}
         >
-          <Icon name="settings" size={24} />
+          <Icon name="settings" size={21} />
         </Pressable>
       </View>
       <View style={{ flex: 1, overflow: "hidden" }}>

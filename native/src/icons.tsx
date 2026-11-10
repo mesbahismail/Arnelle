@@ -119,7 +119,7 @@ const icons = {
 export type IconName = keyof typeof icons | "logo-facebook" | "logo-google";
 export function Icon({
   name,
-  size = 23,
+  size = 20,
   color = "#faf9f7",
 }: {
   name: IconName;

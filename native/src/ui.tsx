@@ -205,7 +205,7 @@ export function Header({
 export function SearchField(props: TextInputProps) {
   return (
     <View style={s.search}>
-      <Icon name="search" color={colors.muted} size={21} />
+      <Icon name="search" color={colors.muted} size={19} />
       <TextInput
         placeholderTextColor={colors.muted}
         style={s.searchInput}

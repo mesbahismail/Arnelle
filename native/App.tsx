@@ -1655,7 +1655,7 @@ function RNL() {
                       {tab === t.title && <View style={st.activeTabLine} />}
                       <Icon
                         name={t.icon}
-                        size={29}
+                        size={26}
                         color={tab === t.title ? colors.accent : "#89898d"}
                       />
                     </Pressable>

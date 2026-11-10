@@ -9,6 +9,7 @@
       "title": "RNL · React Native social app",
       "description": "Expo SDK 54 native social app with onboarding, discovery, communities, local messages, stories, and a live-room demo. See rnl/README.md after installation.",
       "dependencies": [
+        "@expo-google-fonts/dm-sans@^0.4.2",
         "@expo/metro-runtime@~6.1.2",
         "@expo/vector-icons@^15.0.3",
         "@react-native-async-storage/async-storage@2.2.0",
@@ -25,6 +26,7 @@
         "expo-splash-screen@~31.0.13",
         "expo-status-bar@~3.0.8",
         "expo-video@~3.0.11",
+        "lucide-react-native@^1.70.0",
         "react@19.1.0",
         "react-dom@^19.1.0",
         "react-native@0.81.5",
@@ -42,6 +44,36 @@
           "path": "native/src/ui.tsx",
           "type": "registry:file",
           "target": "rnl/src/ui.tsx"
+        },
+        {
+          "path": "native/src/capture-screen.tsx",
+          "type": "registry:file",
+          "target": "rnl/src/capture-screen.tsx"
+        },
+        {
+          "path": "native/src/photo-effects.tsx",
+          "type": "registry:file",
+          "target": "rnl/src/photo-effects.tsx"
+        },
+        {
+          "path": "native/src/icons.tsx",
+          "type": "registry:file",
+          "target": "rnl/src/icons.tsx"
+        },
+        {
+          "path": "native/src/typography.tsx",
+          "type": "registry:file",
+          "target": "rnl/src/typography.tsx"
+        },
+        {
+          "path": "native/src/story-viewer.tsx",
+          "type": "registry:file",
+          "target": "rnl/src/story-viewer.tsx"
+        },
+        {
+          "path": "native/src/playback.ts",
+          "type": "registry:file",
+          "target": "rnl/src/playback.ts"
         },
         {
           "path": "native/src/brand.tsx",

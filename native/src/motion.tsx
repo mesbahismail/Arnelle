@@ -1,3 +1,4 @@
+import { Heart } from "lucide-react-native";
 import React, { useEffect, useRef, useState } from "react";
 import {
   AccessibilityInfo,
@@ -7,7 +8,6 @@ import {
   type PressableProps,
   type StyleProp,
   type ViewStyle,
-  Text,
 } from "react-native";
 const nativeDriver = Platform.OS !== "web";
 export function useReducedMotion() {
@@ -111,55 +111,98 @@ export function Reveal({
     </Animated.View>
   );
 }
-export function FloatingHearts({ burst }: { burst: number }) {
+function HeartParticle({
+  id,
+  onDone,
+}: {
+  id: number;
+  onDone: (id: number) => void;
+}) {
   const progress = useRef(new Animated.Value(0)).current;
-  const reduced = useReducedMotion();
   useEffect(() => {
-    if (!burst || reduced) return;
-    progress.setValue(0);
-    const animation = Animated.timing(progress, {
-      toValue: 1,
-      duration: 1500,
-      useNativeDriver: nativeDriver,
+    const animation = Animated.sequence([
+      Animated.delay((id % 3) * 180),
+      Animated.timing(progress, {
+        toValue: 1,
+        duration: 2600 + (id % 3) * 200,
+        useNativeDriver: nativeDriver,
+      }),
+    ]);
+    animation.start(({ finished }) => {
+      if (finished) onDone(id);
     });
-    animation.start();
     return () => animation.stop();
-  }, [burst, reduced, progress]);
-  if (!burst || reduced) return null;
+  }, [id, progress]);
+  const drift = id % 2 ? 14 : -12;
   return (
     <Animated.View
-      pointerEvents="none"
-      accessibilityElementsHidden
-      importantForAccessibility="no-hide-descendants"
+      testID="live-heart"
       style={{
         position: "absolute",
-        bottom: 110,
-        right: 32,
+        bottom: 0,
+        right: 0,
         opacity: progress.interpolate({
-          inputRange: [0, 0.15, 0.75, 1],
-          outputRange: [0, 1, 0.8, 0],
+          inputRange: [0, 0.08, 0.35, 0.7, 1],
+          outputRange: [0, 0.95, 0.75, 0.4, 0],
         }),
         transform: [
           {
             translateY: progress.interpolate({
               inputRange: [0, 1],
-              outputRange: [0, -180],
+              outputRange: [0, -170 - (id % 4) * 15],
+            }),
+          },
+          {
+            translateX: progress.interpolate({
+              inputRange: [0, 0.35, 0.7, 1],
+              outputRange: [0, drift, -drift / 2, drift / 2],
+            }),
+          },
+          {
+            scale: progress.interpolate({
+              inputRange: [0, 0.15, 1],
+              outputRange: [0.7, 1, 0.85],
             }),
           },
         ],
       }}
     >
-      {[0, 1, 2].map((i) => (
-        <Text
-          key={i}
-          style={{
-            color: ["#fff", "#ffb94d", "#ed5478"][i],
-            fontSize: 24 + i * 5,
-            marginLeft: i % 2 ? 16 : 0,
-          }}
-        >
-          ♥
-        </Text>
+      <Heart
+        size={23 + (id % 3) * 3}
+        fill="white"
+        color="white"
+        strokeWidth={0}
+      />
+    </Animated.View>
+  );
+}
+export function FloatingHearts({ burst }: { burst: number }) {
+  const [particles, setParticles] = useState<number[]>([]);
+  const counter = useRef(0);
+  const reduced = useReducedMotion();
+  useEffect(() => {
+    if (!burst || reduced) return;
+    const batch = [counter.current++, counter.current++, counter.current++];
+    setParticles((previous) => [...previous.slice(-9), ...batch]);
+  }, [burst, reduced]);
+  if (reduced) return null;
+  return (
+    <Animated.View
+      pointerEvents="none"
+      accessibilityElementsHidden
+      importantForAccessibility="no-hide-descendants"
+      style={{ position: "absolute", right: 28, bottom: 88 }}
+    >
+      {particles.map((id) => (
+        <HeartParticle
+          key={id}
+          id={id}
+          onDone={(finished) =>
+            setParticles((previous) =>
+              previous.filter((item) => item !== finished),
+            )
+          }
+        />
       ))}
     </Animated.View>
   );
@@ -186,10 +229,10 @@ export function LiveComment({
         duration: 380,
         useNativeDriver: nativeDriver,
       }),
-      Animated.delay(9500),
+      Animated.delay(3400),
       Animated.timing(progress, {
         toValue: 0.25,
-        duration: 1800,
+        duration: 2000,
         useNativeDriver: nativeDriver,
       }),
     ]);

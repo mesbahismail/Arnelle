@@ -31,14 +31,14 @@ npm run export:ios
 
 ## Flows
 
-- First launch: animated bird splash → welcome → login / sign-up / recovery → setup intro → birthday, gender, nationality, language → interests → creators → Discover.
+- First launch: animated bird splash → welcome. Login goes directly to Discover. Sign-up continues through setup → birthday, gender, nationality, language → interests → creators.
 - Discover → reel playback or live demo room → follow, like, save, comments, and gift sheet. Gift credits debit only when sufficient balance remains.
 - Browse → search reels, hashtags, and accounts. Saved reels are available under Profile → Menu.
 - Communities → join / leave → community feed → publish a local post.
-- Messaging → conversation → send locally persisted messages.
-- Camera → real camera or photo library / demo capture → caption, stickers, tint filter, music → draggable audio selection → audience → publish to profile.
+- Messaging → tap an avatar to view stories, or tap the row to open a conversation → send locally persisted messages → tap a shared video to open the reel viewer.
+- Capture → full-screen preview with flash, Off/3s/10s timer, camera settings, circular shutter, gallery, camera switching, and a horizontal filter strip → story editing → music → audience → publish. Closing capture cancels its countdown. Filters render on the demo and captured-photo previews; the live device-camera feed is unprocessed.
 - Profile → followers, edit profile, menu, preferences, and logout. Settings can restart personalization.
-- Live demo: looping CC0 flower-and-bee footage, incoming comments with fade transitions, floating hearts, and gifts. Demo updates pause when the app goes to the background.
+- Live demo: bundled CC0 flower-and-bee footage, incoming comments every 1.7 seconds with fade transitions, staggered white floating hearts, and gifts. Demo updates pause when the app goes to the background.
 
 ## Template architecture
 
@@ -46,6 +46,12 @@ npm run export:ios
 - `src/entry-flow.tsx`: validated local demo authentication and setup. Demo login is `arnelle` / `demo1234`; passwords and email are never persisted. Stay logged in remembers a non-sensitive demo identity only. This is not an authentication boundary.
 - `src/brand.tsx`: shared vector bird mark. `assets/icon.png` and `assets/splash.png` use the same mark.
 - `src/motion.tsx`: press springs, screen reveals, fading comments, and floating hearts with Reduce Motion support.
+- `src/capture-screen.tsx`: camera controls, permission handling, cancellable timer, and capture.
+- `src/photo-effects.tsx`: monochrome and tint photo previews.
+- `src/typography.tsx`: bundled DM Sans with smaller sizes and lighter weights.
+- `src/icons.tsx`: native Lucide interface icons; provider brand marks remain separate.
+- `src/story-viewer.tsx`: timed story viewing with pause, next/previous, and close controls.
+- `src/playback.ts`: bundled offline nature video source.
 - `src/ui.tsx`: reusable buttons, icon buttons, headers, avatars, search fields, sheets, and section headings.
 - `src/data.ts`: fixtures, original avatars, palette, and spacing tokens (2, 4, 8, 16, 23, 24, 32, 48).
 - `src/store.ts`: versioned AsyncStorage persistence and default demo state.
@@ -62,7 +68,7 @@ Implement `SocialBackend` in `src/services.ts` for messages, uploads, comments, 
 
 Set `livePlaybackUrl` to a server-issued HLS URL for live playback. Broadcasting requires a provider SDK, server-created credentials, and authorization. Never put provider secrets in the app. Gift points are fictional and no payment processing is included.
 
-All fictional songs preview the original generated melody. Replace these fixtures with your own licensed tracks. Remote photo/video fixtures require internet. Camera and filesystem behavior must be checked on a real iPhone before release.
+All fictional songs preview the original generated melody. Replace these fixtures with your own licensed tracks. Remote photos and other video fixtures require internet. The ZIP includes the nature clip for offline live-room playback; the registry version uses the equivalent remote CC0 clip. Camera and filesystem behavior must be checked on a real iPhone before release.
 
 ## Registry installation
 
@@ -72,7 +78,7 @@ This app is also packaged as `/r/rnl-native.json` by the companion preview. In a
 npx shadcn@latest add https://YOUR_HOST/r/rnl-native.json
 ```
 
-The package creates `rnl/App.tsx` and `rnl/src/*` without replacing your entry point. Export it from your app entry (`export { default } from './rnl/App'`), or render it from a route. Merge the camera, photo library, audio, and video plugin/permission configuration from the included setup guide into your app config, then rebuild your native client. The ZIP includes the configured native splash assets; when installing through the registry, add your own splash image and configure `expo-splash-screen` in your app config. Use `npx expo install --fix` to keep dependency versions aligned with your Expo SDK.
+The package creates `rnl/App.tsx` and `rnl/src/*` without replacing your entry point. Export it from your app entry (`export { default } from './rnl/App'`), or render it from a route. Merge the camera, photo library, audio, and video plugin/permission configuration from the included setup guide into your app config, then rebuild your native client. The ZIP includes the configured native splash assets and nature video; when installing through the registry, add your own splash image and configure `expo-splash-screen` in your app config. Use `npx expo install --fix` to keep dependency versions aligned with your Expo SDK.
 
 This is a self-hosted, schema-compatible registry package; it is not a claim of listing in shadcn's official directory.
 

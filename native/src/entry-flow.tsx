@@ -1,3 +1,4 @@
+import { Text, TextInput } from "./typography";
 import React, { useEffect, useRef, useState } from "react";
 import {
   Animated,
@@ -7,8 +8,6 @@ import {
   ScrollView,
   StyleSheet,
   Switch,
-  Text,
-  TextInput,
   View,
   type TextInputProps,
 } from "react-native";
@@ -577,7 +576,7 @@ export function EntryFlow({ onComplete }: EntryProps) {
               session.current = { username: "arnelle", demo: true };
               setProvider("");
               setNewAccount(false);
-              navigate("intro");
+              void complete(true, false);
             } else setInfo("");
           }}
         >
@@ -646,7 +645,7 @@ const a = StyleSheet.create({
     gap: 8,
   },
   buttonText: { color: "#fff", fontSize: 16, fontWeight: "600" },
-  social: { marginTop: 16 },
+  social: { marginTop: 24 },
   loginOptions: {
     flexDirection: "row",
     justifyContent: "space-between",

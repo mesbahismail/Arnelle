@@ -1,3 +1,8 @@
+import { CaptureScreen } from "./src/capture-screen";
+import { PhotoEffects } from "./src/photo-effects";
+import { StoryViewer } from "./src/story-viewer";
+import { natureDemoVideoSource } from "./src/playback";
+import { Text, TextInput, useAppFonts } from "./src/typography";
 import React, { useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
@@ -12,8 +17,6 @@ import {
   Share,
   StyleSheet,
   Switch,
-  Text,
-  TextInput,
   View,
   useWindowDimensions,
 } from "react-native";
@@ -30,7 +33,6 @@ import { StatusBar } from "expo-status-bar";
 import { LinearGradient } from "expo-linear-gradient";
 import { BlurView } from "expo-blur";
 import { VideoView, useVideoPlayer } from "expo-video";
-import { CameraView, useCameraPermissions } from "expo-camera";
 import * as ImagePicker from "expo-image-picker";
 import * as Haptics from "expo-haptics";
 import { useAudioPlayer } from "expo-audio";
@@ -61,11 +63,7 @@ import {
   type IconName,
 } from "./src/ui";
 import { useDemoStore } from "./src/store";
-import {
-  demoVideoUrl,
-  livePlaybackUrl,
-  natureDemoVideoUrl,
-} from "./src/services";
+import { demoVideoUrl, livePlaybackUrl } from "./src/services";
 import { createDemoMelody, persistStoryPhoto } from "./src/media";
 type Tab = "Discover" | "Browse" | "Communities" | "Messaging" | "Profile";
 type Screen =
@@ -95,10 +93,15 @@ const tabs: { title: Tab; icon: IconName }[] = [
   { title: "Profile", icon: "person-circle" },
 ];
 export default function App() {
+  const [fontsLoaded, fontError] = useAppFonts();
   const app = (
     <>
       <StatusBar style="light" />
-      <RNL />
+      {fontsLoaded || fontError ? (
+        <RNL />
+      ) : (
+        <View style={{ flex: 1, backgroundColor: "#141416" }} />
+      )}
       <PreviewChrome />
     </>
   );
@@ -130,6 +133,9 @@ function RNL() {
     null,
   );
   const [community, setCommunity] = useState(communities[0]);
+  const [activeStory, setActiveStory] = useState<
+    (typeof creators)[number] | null
+  >(null);
   const [chat, setChat] = useState(creators[2]);
   const [draft, setDraft] = useState("");
   const [gift, setGift] = useState(1);
@@ -143,12 +149,6 @@ function RNL() {
   const [musicSearch, setMusicSearch] = useState("");
   const [audioSelection, setAudioSelection] = useState(false);
   const [playingTrack, setPlayingTrack] = useState("");
-  const [permission, requestPermission] = useCameraPermissions();
-  const [cameraEnabled, setCameraEnabled] = useState(false);
-  const [facing, setFacing] = useState<"front" | "back">("back");
-  const [flash, setFlash] = useState(false);
-  const [captureBusy, setCaptureBusy] = useState(false);
-  const [cameraReady, setCameraReady] = useState(false);
   const [selector, setSelector] = useState<{
     title: string;
     options: string[];
@@ -159,13 +159,12 @@ function RNL() {
   const [joinedOnly, setJoinedOnly] = useState(false);
   const [toast, setToast] = useState("");
   const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const camera = useRef<CameraView>(null);
   const chatScroll = useRef<ScrollView>(null);
   const [demoAudio] = useState(createDemoMelody);
   const player = useAudioPlayer(demoAudio);
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
-  const cardWidth = Math.min((width - 32 - 8) / 2, 260);
+  const cardWidth = (width - 32 - 8) / 2;
   const notice = (text: string) => {
     setToast(text);
     if (toastTimer.current) clearTimeout(toastTimer.current);
@@ -203,7 +202,7 @@ function RNL() {
   };
   const openCamera = () => {
     setScreen("Camera");
-    setCameraEnabled(false);
+    setFilter("Default");
     setCaption("");
     setTrack("");
     setAudioSelection(false);
@@ -225,27 +224,6 @@ function RNL() {
         "Photo access needed",
         "Enable photo access in iOS Settings to choose an image.",
       );
-    }
-  };
-  const capture = async () => {
-    if (captureBusy) return;
-    setCaptureBusy(true);
-    try {
-      if (cameraEnabled && cameraReady) {
-        const picture = await camera.current?.takePictureAsync({
-          quality: 0.85,
-        });
-        if (!picture) throw new Error("No photo");
-        setStoryUri(picture.uri);
-      } else setStoryUri(photos.hike);
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(
-        () => {},
-      );
-      setScreen("Story");
-    } catch {
-      notice("The camera could not capture a photo. Please try again.");
-    } finally {
-      setCaptureBusy(false);
     }
   };
   const creatorRow = (c: (typeof creators)[number]) => (
@@ -314,14 +292,19 @@ function RNL() {
       <EntryFlow
         onComplete={(session, newAccount, skip) => {
           if (newAccount) update({ handle: session.username, onboarded: skip });
-          else if (skip) update({ onboarded: true });
+          else update({ onboarded: true });
           setStep(0);
           setAuthenticated(true);
         }}
       />
     );
   return (
-    <LinearGradient colors={["#222222", "#111111"]} style={s.root}>
+    <LinearGradient
+      colors={
+        screen === "Camera" ? ["#42482d", "#111511"] : ["#222222", "#111111"]
+      }
+      style={s.root}
+    >
       <SafeAreaView
         style={[s.root, { backgroundColor: "transparent" }]}
         edges={["top"]}
@@ -553,6 +536,22 @@ function RNL() {
             <>
               {screen !== "Camera" && (
                 <Header
+                  borderless={["Communities", "Messaging", "Browse"].includes(
+                    screen,
+                  )}
+                  titleAccessory={
+                    screen === "Chat" ? (
+                      <Avatar index={chat.avatar} size={26} />
+                    ) : screen === "Community" ? (
+                      <Image
+                        source={{ uri: photos[community.image] }}
+                        style={{ width: 26, height: 26, borderRadius: 13 }}
+                      />
+                    ) : undefined
+                  }
+                  onTitlePress={
+                    screen === "Chat" ? () => setActiveStory(chat) : undefined
+                  }
                   title={
                     screen === "Community"
                       ? community.name
@@ -581,22 +580,33 @@ function RNL() {
                         : openCamera()
                   }
                   right={
-                    screen === "Profile"
-                      ? "menu"
-                      : ["Community", "Chat", "Story", "Share"].includes(screen)
-                        ? "ellipsis-vertical"
-                        : "notifications"
-                  }
-                  onRight={() =>
-                    setSheet(
-                      screen === "Profile"
+                    screen === "Communities"
+                      ? "filter"
+                      : screen === "Profile"
                         ? "menu"
                         : ["Community", "Chat", "Story", "Share"].includes(
                               screen,
                             )
-                          ? "help"
-                          : "notifications",
-                    )
+                          ? "ellipsis-vertical"
+                          : "notifications"
+                  }
+                  onRight={() =>
+                    screen === "Communities"
+                      ? (setJoinedOnly((value) => !value),
+                        notice(
+                          joinedOnly
+                            ? "Showing all communities"
+                            : "Showing joined communities",
+                        ))
+                      : setSheet(
+                          screen === "Profile"
+                            ? "menu"
+                            : ["Community", "Chat", "Story", "Share"].includes(
+                                  screen,
+                                )
+                              ? "help"
+                              : "notifications",
+                        )
                   }
                 />
               )}
@@ -618,7 +628,16 @@ function RNL() {
                   >
                     {reels.slice(0, 3).map((r) => card(r))}
                   </ScrollView>
-                  <View style={[st.sectionPad, { marginTop: 24 }]}>
+                  <View
+                    testID="discover-divider"
+                    style={{
+                      height: StyleSheet.hairlineWidth,
+                      backgroundColor: "#ffffff30",
+                      alignSelf: "stretch",
+                      marginVertical: 24,
+                    }}
+                  />
+                  <View style={st.sectionPad}>
                     <Section
                       title="Creators to follow"
                       onMore={() => setScreen("Followers")}
@@ -644,7 +663,16 @@ function RNL() {
                       </Pressable>
                     ))}
                   </ScrollView>
-                  <View style={[st.sectionPad, { marginTop: 24 }]}>
+                  <View
+                    testID="discover-divider"
+                    style={{
+                      height: StyleSheet.hairlineWidth,
+                      backgroundColor: "#ffffff30",
+                      alignSelf: "stretch",
+                      marginVertical: 24,
+                    }}
+                  />
+                  <View style={st.sectionPad}>
                     <Section
                       title="Communities"
                       onMore={() => go("Communities")}
@@ -756,23 +784,33 @@ function RNL() {
               )}
               {screen === "Communities" && (
                 <ScrollView
-                  contentContainerStyle={[s.content, { paddingBottom: 110 }]}
+                  contentContainerStyle={[
+                    s.content,
+                    {
+                      paddingHorizontal: 16,
+                      paddingTop: 8,
+                      paddingBottom: 110,
+                    },
+                  ]}
                 >
-                  <SearchField
-                    placeholder="Search for a community…"
-                    value={search}
-                    onChangeText={setSearch}
-                  />
-                  <View style={[s.row, { marginBottom: 24 }]}>
-                    {["Explore", "Joined"].map((t, i) => (
-                      <Pressable
-                        key={t}
-                        onPress={() => setJoinedOnly(!!i)}
-                        style={[st.chip, joinedOnly === !!i && st.chipSelected]}
-                      >
-                        <Text style={s.small}>{t}</Text>
-                      </Pressable>
-                    ))}
+                  <View
+                    style={{
+                      borderBottomWidth: 1,
+                      borderColor: "#ffffff33",
+                      marginHorizontal: -16,
+                      paddingHorizontal: 16,
+                      marginBottom: 20,
+                    }}
+                  >
+                    <SearchField
+                      placeholder={
+                        joinedOnly
+                          ? "Search joined communities…"
+                          : "Search for a community…"
+                      }
+                      value={search}
+                      onChangeText={setSearch}
+                    />
                   </View>
                   {communities
                     .filter(
@@ -783,6 +821,8 @@ function RNL() {
                     .map((c) => (
                       <View key={c.id} style={st.communityCard}>
                         <Pressable
+                          accessibilityRole="button"
+                          accessibilityLabel={`Open ${c.name}`}
                           onPress={() => {
                             setCommunity(c);
                             setScreen("Community");
@@ -792,21 +832,40 @@ function RNL() {
                           <Photo image={c.image} />
                           <Shade />
                         </Pressable>
-                        <View style={[s.row, { alignItems: "flex-end" }]}>
+                        <View
+                          style={[s.row, { alignItems: "center", gap: 12 }]}
+                        >
+                          <Image
+                            source={{ uri: photos[c.image] }}
+                            style={{
+                              width: 44,
+                              height: 44,
+                              borderRadius: 22,
+                              borderWidth: 1,
+                              borderColor: "#ffffff55",
+                            }}
+                          />
                           <View style={{ flex: 1 }}>
                             <Text
                               style={[
                                 s.text,
-                                { fontWeight: "600", fontSize: 20 },
+                                { fontWeight: "600", fontSize: 16 },
                               ]}
                             >
                               {c.name}
                             </Text>
-                            <Text
-                              style={[s.muted, { marginTop: 8, color: "#ddd" }]}
-                            >
-                              ♟ {c.members} MEMBERS
-                            </Text>
+                            <View style={[s.row, { gap: 4, marginTop: 6 }]}>
+                              <Icon name="people" size={13} color="#ffffffa6" />
+                              <Text
+                                style={{
+                                  color: "#ffffffa6",
+                                  fontSize: 10,
+                                  letterSpacing: 0.8,
+                                }}
+                              >
+                                {c.members} MEMBERS
+                              </Text>
+                            </View>
                           </View>
                           <Action
                             outline
@@ -869,11 +928,41 @@ function RNL() {
                         >
                           {p}
                         </Text>
-                        {i === 1 && (
-                          <Image
-                            source={{ uri: photos[community.image] }}
-                            style={st.postImage}
-                          />
+                        {i === (state.posts[community.id]?.length || 0) + 1 && (
+                          <View
+                            style={{
+                              flexDirection: "row",
+                              gap: 8,
+                              height: 208,
+                            }}
+                          >
+                            <Image
+                              source={{ uri: photos[community.image] }}
+                              style={{
+                                flex: 1.5,
+                                height: 208,
+                                borderRadius: 10,
+                              }}
+                            />
+                            <View style={{ flex: 1, gap: 8 }}>
+                              <Image
+                                source={{ uri: photos.art }}
+                                style={{
+                                  flex: 1,
+                                  width: "100%",
+                                  borderRadius: 10,
+                                }}
+                              />
+                              <Image
+                                source={{ uri: photos.pottery }}
+                                style={{
+                                  flex: 1,
+                                  width: "100%",
+                                  borderRadius: 10,
+                                }}
+                              />
+                            </View>
+                          </View>
                         )}
                         <View
                           style={[
@@ -925,18 +1014,43 @@ function RNL() {
                       </View>
                     ))}
                   </ScrollView>
-                  <View
+                  <BlurView
+                    intensity={65}
+                    tint="dark"
                     style={[
                       st.composer,
-                      { paddingBottom: Math.max(insets.bottom, 16) },
+                      {
+                        borderWidth: 1,
+                        borderColor: "#ffffff55",
+                        borderRadius: 32,
+                        margin: 16,
+                        marginBottom: insets.bottom + 12,
+                        padding: 8,
+                      },
                     ]}
                   >
+                    <IconButton
+                      name="camera"
+                      label="Add community photo"
+                      onPress={openCamera}
+                      size={36}
+                    />
                     <TextInput
                       value={draft}
                       onChangeText={setDraft}
                       style={st.composerInput}
                       placeholder="Add something…"
                       placeholderTextColor={colors.muted}
+                    />
+                    <IconButton
+                      name="add"
+                      label="Attach to community post"
+                      onPress={() =>
+                        setDraft((value) =>
+                          value ? value : "Sharing a little inspiration ✨ ",
+                        )
+                      }
+                      size={36}
                     />
                     <IconButton
                       gradient
@@ -958,12 +1072,15 @@ function RNL() {
                         }
                       }}
                     />
-                  </View>
+                  </BlurView>
                 </KeyboardAvoidingView>
               )}
               {screen === "Messaging" && (
                 <ScrollView
-                  contentContainerStyle={[s.content, { paddingBottom: 110 }]}
+                  contentContainerStyle={[
+                    s.content,
+                    { paddingHorizontal: 16, paddingBottom: 110 },
+                  ]}
                 >
                   <SearchField
                     placeholder="Search for a chat…"
@@ -973,40 +1090,58 @@ function RNL() {
                   {creators
                     .filter((c) => c.handle.includes(search.toLowerCase()))
                     .map((c, i) => (
-                      <Pressable
-                        key={c.id}
-                        style={st.conversation}
-                        onPress={() => {
-                          setChat(c);
-                          setScreen("Chat");
-                          setDraft("");
-                        }}
-                      >
-                        <Avatar index={c.avatar} size={48} ring={i % 2 === 0} />
-                        <View style={{ flex: 1 }}>
-                          <Text style={st.creatorName}>@{c.handle}</Text>
-                          <Text
-                            numberOfLines={1}
-                            style={[
-                              s.muted,
-                              {
-                                marginTop: 8,
-                                color: i < 3 ? colors.accent : colors.muted,
-                              },
-                            ]}
-                          >
-                            {state.messages[c.id]?.at(-1)?.text ||
-                              (i < 2
-                                ? "▶ Tap to view"
-                                : i === 2
-                                  ? "2 new messages"
-                                  : "That sounds like a plan!")}
+                      <View key={c.id} style={st.conversation}>
+                        <Pressable
+                          accessibilityRole="button"
+                          accessibilityLabel={`View story by ${c.handle}`}
+                          onPress={() => setActiveStory(c)}
+                        >
+                          <Avatar
+                            index={c.avatar}
+                            size={48}
+                            ring={c.avatar % 2 === 0}
+                          />
+                        </Pressable>
+                        <Pressable
+                          accessibilityRole="button"
+                          accessibilityLabel={`Chat with ${c.handle}`}
+                          style={{
+                            flex: 1,
+                            flexDirection: "row",
+                            alignItems: "center",
+                            gap: 8,
+                          }}
+                          onPress={() => {
+                            setChat(c);
+                            setScreen("Chat");
+                            setDraft("");
+                          }}
+                        >
+                          <View style={{ flex: 1 }}>
+                            <Text style={st.creatorName}>@{c.handle}</Text>
+                            <Text
+                              numberOfLines={1}
+                              style={[
+                                s.muted,
+                                {
+                                  marginTop: 8,
+                                  color: i < 3 ? colors.accent : colors.muted,
+                                },
+                              ]}
+                            >
+                              {state.messages[c.id]?.at(-1)?.text ||
+                                (i < 2
+                                  ? "▶ Tap to view"
+                                  : i === 2
+                                    ? "2 new messages"
+                                    : "That sounds like a plan!")}
+                            </Text>
+                          </View>
+                          <Text style={{ fontSize: 9, color: colors.muted }}>
+                            11M AGO
                           </Text>
-                        </View>
-                        <Text style={{ fontSize: 9, color: colors.muted }}>
-                          11M AGO
-                        </Text>
-                      </Pressable>
+                        </Pressable>
+                      </View>
                     ))}
                 </ScrollView>
               )}
@@ -1050,6 +1185,35 @@ function RNL() {
                         </Text>
                       </View>
                     ))}
+                    <Pressable
+                      accessibilityRole="button"
+                      accessibilityLabel="Open shared reel"
+                      onPress={() => setActiveReel(reels[0])}
+                      style={[
+                        st.message,
+                        st.ownMessage,
+                        {
+                          flexDirection: "row",
+                          alignItems: "center",
+                          gap: 12,
+                          padding: 10,
+                        },
+                      ]}
+                    >
+                      <Image
+                        source={{ uri: photos[reels[0].image] }}
+                        style={{ width: 52, height: 72, borderRadius: 10 }}
+                      />
+                      <View>
+                        <Text style={[s.text, { marginBottom: 8 }]}>
+                          A moment worth sharing
+                        </Text>
+                        <View style={s.row}>
+                          <Icon name="play" size={18} />
+                          <Text style={s.text}>Open video</Text>
+                        </View>
+                      </View>
+                    </Pressable>
                   </ScrollView>
                   <View
                     style={[
@@ -1167,7 +1331,10 @@ function RNL() {
                       </Pressable>
                     ))}
                   </View>
-                  <View style={[st.grid, { padding: 20 }]}>
+                  <View
+                    testID="profile-reels"
+                    style={[st.grid, { padding: 16 }]}
+                  >
                     {state.stories.map((story) => (
                       <Pressable
                         key={story.id}
@@ -1200,111 +1367,16 @@ function RNL() {
                 </ScrollView>
               )}
               {screen === "Camera" && (
-                <View style={{ flex: 1 }}>
-                  <View
-                    style={[
-                      s.row,
-                      { justifyContent: "space-between", padding: 20 },
-                    ]}
-                  >
-                    <IconButton
-                      name="close"
-                      label="Close camera"
-                      onPress={() => setScreen(tab)}
-                    />
-                    <IconButton
-                      name={flash ? "flash" : "flash-off"}
-                      label="Toggle flash"
-                      onPress={() => setFlash(!flash)}
-                    />
-                    <Text style={s.text}>Photo</Text>
-                    <IconButton
-                      name="camera-reverse"
-                      label="Switch camera"
-                      onPress={() =>
-                        setFacing((f) => (f === "front" ? "back" : "front"))
-                      }
-                    />
-                  </View>
-                  <View style={{ flex: 1 }}>
-                    {cameraEnabled && permission?.granted ? (
-                      <CameraView
-                        ref={camera}
-                        style={StyleSheet.absoluteFillObject}
-                        facing={facing}
-                        flash={flash ? "on" : "off"}
-                        onCameraReady={() => setCameraReady(true)}
-                      />
-                    ) : (
-                      <>
-                        <Image
-                          source={{ uri: photos.hike }}
-                          style={StyleSheet.absoluteFillObject}
-                        />
-                        <View style={st.enableCamera}>
-                          <Action
-                            onPress={async () => {
-                              const result = await requestPermission();
-                              if (result.granted) setCameraEnabled(true);
-                              else
-                                notice(
-                                  "Camera access was declined. You can still choose a photo or use the demo.",
-                                );
-                            }}
-                          >
-                            Enable camera
-                          </Action>
-                          <Text style={[s.small, { marginTop: 8 }]}>
-                            Or capture the demo scene below.
-                          </Text>
-                        </View>
-                      </>
-                    )}
-                    <Shade />
-                    <View style={st.cameraControls}>
-                      <IconButton
-                        name="image"
-                        label="Choose photo from library"
-                        size={48}
-                        onPress={pickPhoto}
-                      />
-                      <Action
-                        disabled={
-                          captureBusy || (cameraEnabled && !cameraReady)
-                        }
-                        style={{ width: 82 }}
-                        onPress={capture}
-                        label="Take photo"
-                      >
-                        <Icon name="aperture" size={36} />
-                      </Action>
-                      <IconButton
-                        name="camera-reverse"
-                        label="Switch camera"
-                        size={48}
-                        onPress={() =>
-                          setFacing((f) => (f === "front" ? "back" : "front"))
-                        }
-                      />
-                    </View>
-                  </View>
-                  <View
-                    style={[
-                      st.chips,
-                      { marginVertical: 20, paddingBottom: insets.bottom },
-                    ]}
-                  >
-                    {["Default", "Golden", "Cool"].map((f) => (
-                      <Pressable
-                        key={f}
-                        onPress={() => setFilter(f)}
-                        style={[st.chip, filter === f && st.chipSelected]}
-                      >
-                        <Text style={s.small}>{f}</Text>
-                      </Pressable>
-                    ))}
-                  </View>
-                </View>
+                <CaptureScreen
+                  onClose={() => setScreen(tab)}
+                  onPhoto={(uri) => {
+                    setStoryUri(uri);
+                    setScreen("Story");
+                  }}
+                  onLibrary={pickPhoto}
+                  filter={filter}
+                  onFilter={setFilter}
+                />
               )}
               {screen === "Story" && (
                 <View
@@ -1318,23 +1390,7 @@ function RNL() {
                   ]}
                 >
                   <View style={st.storyPreview}>
-                    <Image
-                      source={{ uri: storyUri }}
-                      style={StyleSheet.absoluteFillObject}
-                      resizeMode="cover"
-                    />
-                    {filter !== "Default" && (
-                      <View
-                        pointerEvents="none"
-                        style={[
-                          StyleSheet.absoluteFillObject,
-                          {
-                            backgroundColor:
-                              filter === "Golden" ? "#fca34230" : "#5684e430",
-                          },
-                        ]}
-                      />
-                    )}
+                    <PhotoEffects uri={storyUri} filter={filter} />
                     <Text style={st.storyCaption}>{caption}</Text>
                     {!!track && (
                       <Text style={st.trackBadge}>
@@ -1574,6 +1630,19 @@ function RNL() {
                     { paddingBottom: Math.max(insets.bottom, 16) },
                   ]}
                 >
+                  <LinearGradient
+                    pointerEvents="none"
+                    colors={["#ffffff08", "#17202122", "#080909b8"]}
+                    locations={[0, 0.45, 1]}
+                    style={StyleSheet.absoluteFillObject}
+                  />
+                  <LinearGradient
+                    pointerEvents="none"
+                    colors={["#ef79561a", "#71528120", "#57989a20"]}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 1 }}
+                    style={[StyleSheet.absoluteFillObject, { top: 40 }]}
+                  />
                   {tabs.map((t) => (
                     <Pressable
                       key={t.title}
@@ -1595,6 +1664,19 @@ function RNL() {
               )}
             </>
           )}
+          <Modal
+            visible={!!activeStory}
+            animationType="fade"
+            onRequestClose={() => setActiveStory(null)}
+            statusBarTranslucent
+          >
+            {activeStory && (
+              <StoryViewer
+                creator={activeStory}
+                onClose={() => setActiveStory(null)}
+              />
+            )}
+          </Modal>
           <Sheet
             title={
               sheet === "select"
@@ -2008,7 +2090,7 @@ function ReelViewer({
   giftsSent: string[];
 }) {
   const player = useVideoPlayer(
-    reel.live ? livePlaybackUrl || natureDemoVideoUrl : demoVideoUrl,
+    reel.live ? livePlaybackUrl || natureDemoVideoSource : demoVideoUrl,
     (p) => {
       p.loop = true;
       p.muted = true;
@@ -2056,7 +2138,7 @@ function ReelViewer({
             { ...comment, id: `incoming-${index++}-${Date.now()}` },
           ]);
           setHeartBurst((value) => value + 1);
-        }, 3800)
+        }, 1700)
       : null;
     return () => {
       if (timer) clearInterval(timer);
@@ -2078,7 +2160,13 @@ function ReelViewer({
           nativeControls={!reel.live}
         />
       )}
-      <Shade />
+      <LinearGradient
+        pointerEvents="none"
+        colors={["#000b", "#0000", "#0000", "#000d"]}
+        locations={[0, 0.28, 0.58, 1]}
+        style={StyleSheet.absoluteFillObject}
+      />
+
       <SafeAreaView style={{ flex: 1 }}>
         <View style={[s.row, { padding: 16 }]}>
           <Avatar
@@ -2099,7 +2187,7 @@ function ReelViewer({
                 </View>
               )}
             </View>
-            <Text style={{ fontSize: 11, color: "#ccc", marginTop: 5 }}>
+            <Text style={{ fontSize: 11, color: "#ffffff99", marginTop: 5 }}>
               {reel.live && !livePlaybackUrl ? "Demo live room" : reel.title}
             </Text>
           </View>
@@ -2113,11 +2201,6 @@ function ReelViewer({
             size={34}
           />
         </View>
-        {error && (
-          <Text style={[s.muted, { padding: 24, backgroundColor: "#000a" }]}>
-            Video could not load. Check your connection and reopen this reel.
-          </Text>
-        )}
         <View style={{ flex: 1 }} />
         <View style={{ position: "absolute", right: 20, top: 145, gap: 16 }}>
           {giftsSent.map((g, i) => (
@@ -2160,12 +2243,13 @@ function ReelViewer({
                   }
                 }}
                 placeholder="Type something…"
-                placeholderTextColor="#bbb"
+                placeholderTextColor="#ffffff99"
                 style={[
                   st.textInput,
                   {
                     flex: 1,
-                    backgroundColor: "#0008",
+                    backgroundColor: "#ffffff0d",
+                    borderColor: "#ffffff66",
                     marginTop: 0,
                     borderRadius: 30,
                   },
@@ -2274,11 +2358,11 @@ const st = StyleSheet.create({
     overflow: "hidden",
   },
   communityCard: {
-    height: 172,
+    height: 164,
     borderRadius: 20,
     overflow: "hidden",
-    marginBottom: 16,
-    padding: 20,
+    marginBottom: 12,
+    padding: 16,
     justifyContent: "flex-end",
   },
   grid: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
@@ -2303,7 +2387,7 @@ const st = StyleSheet.create({
     overflow: "hidden",
     flexDirection: "row",
     paddingTop: 24,
-    backgroundColor: "#242528b8",
+    backgroundColor: "#20242466",
   },
   tab: {
     flex: 1,
@@ -2482,7 +2566,8 @@ const st = StyleSheet.create({
     left: 15,
     bottom: 15,
     borderRadius: 20,
-    backgroundColor: "#0008",
+    backgroundColor: "#ffffff0d",
+    borderColor: "#ffffff66",
     padding: 9,
     color: "#fff",
     fontSize: 12,
@@ -2549,9 +2634,9 @@ const st = StyleSheet.create({
     borderRadius: 12,
   },
   liveComment: {
-    backgroundColor: "#15191a88",
+    backgroundColor: "#ffffff12",
     borderWidth: 1,
-    borderColor: "#ffffff66",
+    borderColor: "#ffffff4d",
     borderRadius: 14,
     borderBottomLeftRadius: 4,
     padding: 12,

@@ -1,13 +1,12 @@
+import { Text, TextInput } from "./typography";
 import React, { type ReactNode } from "react";
 import {
   View,
-  Text,
   Pressable,
   Image,
   Modal,
   ScrollView,
   StyleSheet,
-  TextInput,
   PanResponder,
   type ViewStyle,
   type StyleProp,
@@ -15,25 +14,14 @@ import {
 } from "react-native";
 import { SpringPressable } from "./motion";
 import { PreviewChrome } from "./preview-chrome";
-import { Ionicons } from "@expo/vector-icons";
+import { Icon, type IconName } from "./icons";
+export { Icon, type IconName } from "./icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { BlurView } from "expo-blur";
 import { SvgXml } from "react-native-svg";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import * as Haptics from "expo-haptics";
 import { colors, avatarSvg, photos, type PhotoKey, space } from "./data";
-export type IconName = React.ComponentProps<typeof Ionicons>["name"];
-export function Icon({
-  name,
-  size = 23,
-  color = colors.text,
-}: {
-  name: IconName;
-  size?: number;
-  color?: string;
-}) {
-  return <Ionicons name={name} size={size} color={color} />;
-}
 export function Avatar({
   index = 0,
   size = 48,
@@ -160,24 +148,49 @@ export function Header({
   onLeft,
   right = "notifications",
   onRight,
+  titleAccessory,
+  onTitlePress,
+  borderless = false,
 }: {
   title: string;
   left?: IconName;
   onLeft: () => void;
   right?: IconName;
   onRight?: () => void;
+  titleAccessory?: ReactNode;
+  onTitlePress?: () => void;
+  borderless?: boolean;
 }) {
   return (
-    <View style={s.header}>
+    <View style={[s.header, borderless && { borderBottomWidth: 0 }]}>
       <Pressable
         accessibilityRole="button"
-        accessibilityLabel={left === "chevron-back" ? "Go back" : "Open camera"}
+        accessibilityLabel={
+          left === "chevron-back"
+            ? "Go back"
+            : left === "close"
+              ? "Close screen"
+              : left === "add"
+                ? "Add new"
+                : "Open camera"
+        }
         onPress={onLeft}
         style={s.headerIcon}
       >
         <Icon name={left} />
       </Pressable>
-      <Text style={s.headerTitle}>{title}</Text>
+      <Pressable
+        accessibilityRole={onTitlePress ? "button" : undefined}
+        accessibilityLabel={
+          onTitlePress ? `View story by ${title.replace("@", "")}` : undefined
+        }
+        disabled={!onTitlePress}
+        onPress={onTitlePress}
+        style={[s.row, { justifyContent: "center" }]}
+      >
+        {titleAccessory}
+        <Text style={s.headerTitle}>{title}</Text>
+      </Pressable>
       <Pressable
         accessibilityRole="button"
         accessibilityLabel={right === "menu" ? "Open menu" : "More options"}
@@ -386,7 +399,7 @@ export const s = StyleSheet.create({
     minHeight: 36,
     paddingHorizontal: 14,
     borderWidth: 1,
-    borderColor: "#77777d",
+    borderColor: "#ffffff66",
     borderRadius: 30,
     justifyContent: "center",
     alignItems: "center",
@@ -398,7 +411,7 @@ export const s = StyleSheet.create({
     width: 40,
     height: 40,
     borderWidth: 1,
-    borderColor: "#77777d",
+    borderColor: "#ffffff66",
     borderRadius: 40,
     alignItems: "center",
     justifyContent: "center",
@@ -438,7 +451,7 @@ export const s = StyleSheet.create({
     alignItems: "center",
     gap: 6,
     borderWidth: 1,
-    borderColor: "#77777d",
+    borderColor: "#ffffff66",
     paddingHorizontal: 11,
     paddingVertical: 6,
     borderRadius: 30,

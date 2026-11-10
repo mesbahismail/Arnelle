@@ -35,11 +35,11 @@ This launches the Expo app in an available iPhone Simulator. For a physical iPho
 
 ## Included flows
 
-Animated splash → welcome → demo login / sign-up / recovery → setup → onboarding → interests → follow creators → Discover. Browse/search, communities and local posts, messaging, profile/followers/saved reels, camera/library → story editing → music selection → audience → publish, and a live-room demo with looping nature video, incoming fading comments, floating hearts, and point-based gifts.
+Animated splash → welcome → demo login / sign-up / recovery → setup → onboarding → interests → follow creators → Discover. Browse/search, communities and local posts, messaging, profile/followers/saved reels, camera/library → story editing → music selection → audience → publish, and a live-room demo with bundled looping nature video, incoming fading comments every 1.7 seconds, white floating hearts, and point-based gifts.
 
 The reference-inspired Arnelle bird mark is shared by the welcome screen, splash, app icon, and browser icon. Press feedback and screen transitions respect Reduce Motion. Demo login: **arnelle / demo1234**. Passwords are never persisted. Social login and recovery explicitly preview the flow without connecting accounts or sending email.
 
-All screens use React Native primitives. Native UI, data, persistence, media helpers, and preview share one source. The palette and spacing tokens are in `native/src/data.ts`.
+All screens use React Native primitives, Lucide icons, and bundled DM Sans typography. Login goes straight to Discover; setup is reserved for sign-up. Avatar story rings open a story viewer, and shared videos in conversations open the reel viewer. Profile reels stay in two columns. Discover has full-width section dividers. Capture follows the supplied full-screen layout with a circular shutter, timer, camera settings, and filter strip. Native UI, data, persistence, media helpers, and preview share one source. The palette and spacing tokens are in `native/src/data.ts`.
 
 ## Validate and distribute
 
@@ -55,7 +55,7 @@ npm run registry:build
 npm run template:pack
 ```
 
-The runtime smoke test executes the actual Expo web bundle and checks authentication validation, recovery, setup, onboarding, all five tabs, logout, and the live room. It is not a visual screenshot test.
+The runtime smoke test executes the actual Expo web bundle and checks authentication validation, recovery, setup, onboarding, all five tabs, logout, story avatars, shared reels, the two-column profile grid, and the live room. It is not a visual screenshot test.
 
 The downloadable native source is `public/rnl-template.zip`. Self-hostable shadcn registry packages are in `public/r/`; the native package is `/r/rnl-native.json`. Registry distribution does not convert native controls into DOM-based shadcn widgets. No official directory listing is claimed.
 

@@ -4,6 +4,12 @@ const nativePackage = JSON.parse(await read("native/package.json"));
 const nativeFiles = [
   "App.tsx",
   "src/ui.tsx",
+  "src/capture-screen.tsx",
+  "src/photo-effects.tsx",
+  "src/icons.tsx",
+  "src/typography.tsx",
+  "src/story-viewer.tsx",
+  "src/playback.ts",
   "src/brand.tsx",
   "src/motion.tsx",
   "src/entry-flow.tsx",
@@ -29,7 +35,10 @@ const native = {
       path: `native/${file}`,
       type: "registry:file",
       target: `rnl/${file}`,
-      content: await read(`native/${file}`),
+      content:
+        file === "src/playback.ts"
+          ? 'import { natureDemoVideoUrl } from "./services";\nexport const natureDemoVideoSource = natureDemoVideoUrl;\n'
+          : await read(`native/${file}`),
     })),
   ),
   meta: {

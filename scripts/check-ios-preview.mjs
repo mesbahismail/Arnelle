@@ -81,6 +81,20 @@ const expectText = (label) => {
   if (!w.document.body.textContent.includes(label))
     throw new Error(`Native screen missing: ${label}`);
 };
+function expectButtonMargin(label, points) {
+  const button = [
+    ...w.document.querySelectorAll('[role="button"], [tabindex="0"]'),
+  ].find(
+    (node) =>
+      node.getAttribute("aria-label") === label ||
+      node.textContent.trim() === label,
+  );
+  const margin = button && w.getComputedStyle(button).marginTop;
+  if (margin !== `${points}px`)
+    throw new Error(
+      `${label}: expected ${points}px spacing, received ${margin}`,
+    );
+}
 function fill(label, value) {
   const input = [...w.document.querySelectorAll("input")].find(
     (n) => n.getAttribute("aria-label") === label,
@@ -94,6 +108,8 @@ function fill(label, value) {
 }
 try {
   expectText("ARNELLE");
+  expectButtonMargin("Login with Facebook", 32);
+  expectButtonMargin("Login with Google", 32);
   expectText("9:41");
   await press("Login");
   expectText("Welcome back");
@@ -130,14 +146,17 @@ try {
   await wait();
   await press("Create account");
   expectText("Let’s setup your account");
+  expectButtonMargin("Skip →", 24);
   await press("Get started");
   expectText("Tell us about you");
   for (const label of ["BIRTHDAY", "GENDER", "NATIONALITY", "LANGUAGE"])
     expectText(label);
   await press("Next");
   expectText("Choose your interests");
+  expectButtonMargin("Skip →", 24);
   await press("Next");
   expectText("Follow creators");
+  expectButtonMargin("Skip →", 24);
   await press("Next");
   expectText("What’s new");
   await press("Browse");

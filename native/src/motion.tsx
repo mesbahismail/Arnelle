@@ -38,6 +38,7 @@ export function SpringPressable({
   ...props
 }: PressableProps) {
   const scale = useRef(new Animated.Value(1)).current;
+  const [pressed, setPressed] = useState(false);
   const reduced = useReducedMotion();
   useEffect(() => () => scale.stopAnimation(), [scale]);
   const animate = (toValue: number) =>
@@ -51,15 +52,17 @@ export function SpringPressable({
     <AnimatedPressable
       {...props}
       onPressIn={(e) => {
+        setPressed(true);
         if (!reduced) animate(0.965);
         onPressIn?.(e);
       }}
       onPressOut={(e) => {
+        setPressed(false);
         animate(1);
         onPressOut?.(e);
       }}
-      style={(state) => [
-        typeof style === "function" ? style(state) : style,
+      style={[
+        typeof style === "function" ? style({ pressed }) : style,
         { transform: [{ scale }] },
       ]}
     />

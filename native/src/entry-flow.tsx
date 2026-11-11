@@ -168,7 +168,7 @@ export function EntryFlow({ onComplete }: EntryProps) {
     <Action
       outline
       onPress={() => setProvider(name)}
-      style={a.social}
+      style={[a.social, full && a.welcomeSocial]}
       label={`${full ? "Login with " : ""}${name}`}
     >
       <View style={a.buttonRow}>
@@ -367,7 +367,7 @@ export function EntryFlow({ onComplete }: EntryProps) {
                     <Action
                       outline
                       disabled={busy}
-                      style={{ marginTop: 10 }}
+                      style={{ marginTop: 24 }}
                       onPress={() => void complete(true)}
                     >
                       Skip →
@@ -646,6 +646,7 @@ const a = StyleSheet.create({
   },
   buttonText: { color: "#fff", fontSize: 16, fontWeight: "600" },
   social: { marginTop: 24 },
+  welcomeSocial: { marginTop: 32 },
   loginOptions: {
     flexDirection: "row",
     justifyContent: "space-between",

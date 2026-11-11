@@ -2444,7 +2444,7 @@ const st = StyleSheet.create({
     backgroundColor: "#151517",
   },
   chipSelected: { borderColor: colors.accent, backgroundColor: "#5f342966" },
-  skip: { padding: 18, alignItems: "center" },
+  skip: { marginTop: 24, padding: 18, alignItems: "center" },
   option: {
     flexDirection: "row",
     alignItems: "center",

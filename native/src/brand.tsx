@@ -1,5 +1,7 @@
 import React from "react";
+import { LinearGradient } from "expo-linear-gradient";
 import { SvgXml } from "react-native-svg";
+import { EntryBackground } from "./entry-background";
 
 /** Source-owned vector mark inspired by the supplied Arnelle reference. */
 export const brandSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 216 216"><defs><linearGradient id="sunrise" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#ffbd49"/><stop offset=".48" stop-color="#f47d43"/><stop offset="1" stop-color="#d93470"/></linearGradient><linearGradient id="feather" x2="0" y2="1"><stop stop-color="#fff"/><stop offset="1" stop-color="#ffe1d7"/></linearGradient></defs><circle cx="108" cy="108" r="106" fill="url(#sunrise)"/><path d="M3 92A106 106 0 0 1 213 92A106 104 0 0 0 3 92" fill="#fff1cb"/><path d="M30 64C48 78 66 83 84 86C85 95 90 101 97 105L101 84L113 84L119 105C128 101 132 94 133 86C152 83 170 76 186 64C181 98 158 121 119 127L125 145L108 160L91 145L97 127C59 121 35 99 30 64Z" fill="url(#feather)"/><path d="M99 84L96 88L102 88Z" fill="#fff"/></svg>`;
@@ -11,5 +13,25 @@ export function BrandMark({ size = 108 }: { size?: number }) {
       height={size}
       accessibilityLabel="Arnelle bird logo"
     />
+  );
+}
+
+export function StartupLogo() {
+  return (
+    <LinearGradient
+      colors={["#272828", "#111212"]}
+      testID="startup-logo"
+      accessibilityLabel="Loading Arnelle"
+      accessibilityRole="progressbar"
+      aria-busy
+      style={{
+        flex: 1,
+        alignItems: "center",
+        justifyContent: "center",
+      }}
+    >
+      <EntryBackground blurred={false} />
+      <BrandMark size={108} />
+    </LinearGradient>
   );
 }

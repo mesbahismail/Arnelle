@@ -211,55 +211,122 @@ export function FloatingHearts({ burst }: { burst: number }) {
   );
 }
 
-/** New comments rise into the room, then gently fade as the conversation moves on. */
+/** Keep outgoing comments mounted until their fade and collapse have finished. */
 export function LiveComment({
   children,
   style,
+  exiting = false,
+  onDismiss,
+  id,
 }: {
   children: React.ReactNode;
   style?: StyleProp<ViewStyle>;
+  exiting?: boolean;
+  onDismiss: () => void;
+  id: string;
 }) {
-  const progress = useRef(new Animated.Value(0)).current;
+  const entrance = useRef(new Animated.Value(0)).current;
+  const opacity = useRef(new Animated.Value(1)).current;
+  const collapse = useRef(new Animated.Value(0)).current;
+  const [height, setHeight] = useState(0);
+  const [expired, setExpired] = useState(false);
+  const dismiss = useRef(onDismiss);
+  dismiss.current = onDismiss;
   const reduced = useReducedMotion();
+
+  useEffect(() => {
+    const timer = setTimeout(() => setExpired(true), 4200);
+    return () => clearTimeout(timer);
+  }, []);
+
   useEffect(() => {
     if (reduced) {
-      progress.setValue(1);
+      entrance.setValue(1);
       return;
     }
-    const animation = Animated.sequence([
-      Animated.timing(progress, {
-        toValue: 1,
-        duration: 380,
-        useNativeDriver: nativeDriver,
-      }),
-      Animated.delay(3400),
-      Animated.timing(progress, {
-        toValue: 0.25,
-        duration: 2000,
-        useNativeDriver: nativeDriver,
-      }),
-    ]);
+    entrance.setValue(0);
+    const animation = Animated.spring(entrance, {
+      toValue: 1,
+      speed: 22,
+      bounciness: 4,
+      useNativeDriver: nativeDriver,
+    });
     animation.start();
     return () => animation.stop();
-  }, [progress, reduced]);
+  }, [entrance, reduced]);
+
+  useEffect(() => {
+    if (!exiting && !expired) return;
+    if (reduced) {
+      dismiss.current();
+      return;
+    }
+    const animation = Animated.parallel([
+      Animated.timing(opacity, {
+        toValue: 0,
+        duration: 400,
+        useNativeDriver: false,
+      }),
+      Animated.sequence([
+        Animated.delay(280),
+        Animated.timing(collapse, {
+          toValue: 1,
+          duration: 220,
+          useNativeDriver: false,
+        }),
+      ]),
+    ]);
+    animation.start(({ finished }) => {
+      if (finished) dismiss.current();
+    });
+    return () => animation.stop();
+  }, [exiting, expired, reduced, opacity, collapse]);
+
   return (
     <Animated.View
-      style={[
-        style,
-        {
-          opacity: progress,
-          transform: [
-            {
-              translateY: progress.interpolate({
-                inputRange: [0, 1],
-                outputRange: [12, 0],
-              }),
-            },
-          ],
-        },
-      ]}
+      testID={`live-comment-${id}`}
+      style={{
+        opacity,
+        overflow: "hidden",
+        maxWidth: "100%",
+        height: height
+          ? collapse.interpolate({
+              inputRange: [0, 1],
+              outputRange: [height + 9, 0],
+            })
+          : undefined,
+      }}
     >
-      {children}
+      <Animated.View
+        onLayout={(event) => setHeight(event.nativeEvent.layout.height)}
+        style={[
+          style,
+          {
+            marginBottom: 9,
+            opacity: entrance.interpolate({
+              inputRange: [0, 1],
+              outputRange: [0, 1],
+              extrapolate: "clamp",
+            }),
+            transform: [
+              {
+                translateY: entrance.interpolate({
+                  inputRange: [0, 1],
+                  outputRange: [28, 0],
+                }),
+              },
+              {
+                scale: entrance.interpolate({
+                  inputRange: [0, 1],
+                  outputRange: [0.94, 1],
+                }),
+              },
+            ],
+          },
+        ]}
+      >
+        {children}
+      </Animated.View>
     </Animated.View>
   );
 }

@@ -333,12 +333,14 @@ export function Sheet({
 export function Divider({
   children,
   first = false,
+  style,
 }: {
   children: string;
   first?: boolean;
+  style?: StyleProp<ViewStyle>;
 }) {
   return (
-    <View style={[s.divider, first && { marginTop: 24 }]}>
+    <View style={[s.divider, first && { marginTop: 24 }, style]}>
       <LinearGradient
         colors={["#77777700", "#777777"]}
         start={{ x: 0, y: 0 }}

@@ -1,11 +1,14 @@
 import { CaptureScreen } from "./src/capture-screen";
+import { PageLoading } from "./src/page-loading";
 import { PhotoEffects } from "./src/photo-effects";
 import { StoryViewer } from "./src/story-viewer";
+import { ViewerReplyBar } from "./src/viewer-reply-bar";
+import { StartupLogo } from "./src/brand";
+import { EntryBackground } from "./src/entry-background";
 import { natureDemoVideoSource } from "./src/playback";
 import { Text, TextInput, useAppFonts } from "./src/typography";
 import React, { useEffect, useRef, useState } from "react";
 import {
-  ActivityIndicator,
   AppState,
   Alert,
   Image,
@@ -100,7 +103,7 @@ export default function App() {
       {fontsLoaded || fontError ? (
         <RNL />
       ) : (
-        <View style={{ flex: 1, backgroundColor: "#141416" }} />
+        <StartupLogo />
       )}
       <PreviewChrome />
     </>
@@ -186,6 +189,18 @@ function RNL() {
     setSearch("");
     setSheet(null);
     setDraft("");
+  };
+  const replyToCreator = (creatorId: string, text: string) => {
+    setState((previous) => ({
+      ...previous,
+      messages: {
+        ...previous.messages,
+        [creatorId]: [
+          ...(previous.messages[creatorId] || []),
+          { text, own: true },
+        ],
+      },
+    }));
   };
   const closeSheet = () => {
     player.pause();
@@ -281,12 +296,7 @@ function RNL() {
       .toLowerCase()
       .includes(search.toLowerCase()),
   );
-  if (!ready)
-    return (
-      <View style={[s.root, st.center]}>
-        <ActivityIndicator color={colors.accent} />
-      </View>
-    );
+  if (!ready) return <StartupLogo />;
   if (!authenticated)
     return (
       <EntryFlow
@@ -301,10 +311,15 @@ function RNL() {
   return (
     <LinearGradient
       colors={
-        screen === "Camera" ? ["#42482d", "#111511"] : ["#222222", "#111111"]
+        !state.onboarded
+          ? ["#272828", "#111212"]
+          : screen === "Camera"
+            ? ["#42482d", "#111511"]
+            : ["#222222", "#111111"]
       }
       style={s.root}
     >
+      {!state.onboarded && <EntryBackground blurred />}
       <SafeAreaView
         style={[s.root, { backgroundColor: "transparent" }]}
         edges={["top"]}
@@ -610,6 +625,7 @@ function RNL() {
                   }
                 />
               )}
+              <PageLoading key={screen} page={screen}>
               {screen === "Discover" && (
                 <ScrollView
                   showsVerticalScrollIndicator={false}
@@ -1619,6 +1635,7 @@ function RNL() {
                   </Action>
                 </ScrollView>
               )}
+              </PageLoading>
               {!["Chat", "Community", "Camera", "Story", "Share"].includes(
                 screen,
               ) && (
@@ -1674,6 +1691,7 @@ function RNL() {
               <StoryViewer
                 creator={activeStory}
                 onClose={() => setActiveStory(null)}
+                onReply={(text) => replyToCreator(activeStory.id, text)}
               />
             )}
           </Modal>
@@ -1784,6 +1802,9 @@ function RNL() {
                   <Switch
                     value={state.privateProfile}
                     onValueChange={(v) => update({ privateProfile: v })}
+                    thumbColor={
+                      state.privateProfile ? colors.accentLight : "#f4f4f4"
+                    }
                     trackColor={{ true: colors.accent }}
                   />
                 </View>
@@ -1977,6 +1998,7 @@ function RNL() {
                 onLike={() => toggle("liked", activeReel.id)}
                 onClose={() => setActiveReel(null)}
                 onGift={() => setSheet("gift")}
+                onReply={(text) => replyToCreator(activeReel.user, text)}
                 giftsSent={giftsSent}
               />
             )}
@@ -2076,6 +2098,7 @@ function ReelViewer({
   onLike,
   onClose,
   onGift,
+  onReply,
   giftsSent,
 }: {
   reel: (typeof reels)[number];
@@ -2087,6 +2110,7 @@ function ReelViewer({
   onLike: () => void;
   onClose: () => void;
   onGift: () => void;
+  onReply: (text: string) => void;
   giftsSent: string[];
 }) {
   const player = useVideoPlayer(
@@ -2134,7 +2158,7 @@ function ReelViewer({
           if (!foreground) return;
           const comment = incoming[index % incoming.length];
           setComments((previous) => [
-            ...previous.slice(-3),
+            ...previous,
             { ...comment, id: `incoming-${index++}-${Date.now()}` },
           ]);
           setHeartBurst((value) => value + 1);
@@ -2167,149 +2191,178 @@ function ReelViewer({
         style={StyleSheet.absoluteFillObject}
       />
 
-      <SafeAreaView style={{ flex: 1 }}>
-        <View style={[s.row, { padding: 16 }]}>
-          <Avatar
-            index={creators.find((c) => c.id === reel.user)?.avatar || 0}
-            size={44}
-          />
-          <View style={{ flex: 1 }}>
-            <View style={s.row}>
-              <Text style={[s.text, { fontWeight: "600" }]}>@{reel.user}</Text>
-              {reel.live && (
-                <View
-                  style={[
-                    st.liveBadge,
-                    { position: "relative", top: 0, left: 0 },
-                  ]}
-                >
-                  <Text style={st.liveText}>LIVE</Text>
-                </View>
-              )}
-            </View>
-            <Text style={{ fontSize: 11, color: "#ffffff99", marginTop: 5 }}>
-              {reel.live && !livePlaybackUrl ? "Demo live room" : reel.title}
-            </Text>
-          </View>
-          <Action outline onPress={onFollow}>
-            <Text style={s.small}>{following ? "Following" : "+ Follow"}</Text>
-          </Action>
-          <IconButton
-            name="close"
-            label="Close reel"
-            onPress={onClose}
-            size={34}
-          />
-        </View>
-        <View style={{ flex: 1 }} />
-        <View style={{ position: "absolute", right: 20, top: 145, gap: 16 }}>
-          {giftsSent.map((g, i) => (
-            <Text key={i} style={s.text}>
-              {g}
-            </Text>
-          ))}
-        </View>
-        {reel.live && (
-          <View style={{ padding: 16, gap: 9, alignItems: "flex-start" }}>
-            {comments.slice(-4).map((c) => (
-              <LiveComment key={c.id} style={st.liveComment}>
-                <Text style={[s.text, { fontWeight: "600" }]}>@{c.user}</Text>
-                <Text style={[s.text, { marginTop: 6, fontSize: 14 }]}>
-                  {c.text}
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
+      >
+        <SafeAreaView style={{ flex: 1 }}>
+          <View style={[s.row, { padding: 16 }]}>
+            <Avatar
+              index={creators.find((c) => c.id === reel.user)?.avatar || 0}
+              size={44}
+            />
+            <View style={{ flex: 1 }}>
+              <View style={s.row}>
+                <Text style={[s.text, { fontWeight: "600" }]}>
+                  @{reel.user}
                 </Text>
-              </LiveComment>
+                {reel.live && (
+                  <View
+                    style={[
+                      st.liveBadge,
+                      { position: "relative", top: 0, left: 0 },
+                    ]}
+                  >
+                    <Text style={st.liveText}>LIVE</Text>
+                  </View>
+                )}
+              </View>
+              <Text style={{ fontSize: 11, color: "#ffffff99", marginTop: 5 }}>
+                {reel.live && !livePlaybackUrl ? "Demo live room" : reel.title}
+              </Text>
+            </View>
+            <Action outline onPress={onFollow}>
+              <Text style={s.small}>
+                {following ? "Following" : "+ Follow"}
+              </Text>
+            </Action>
+            <IconButton
+              name="close"
+              label="Close reel"
+              onPress={onClose}
+              size={34}
+            />
+          </View>
+          <View style={{ flex: 1 }} />
+          <View style={{ position: "absolute", right: 20, top: 145, gap: 16 }}>
+            {giftsSent.map((g, i) => (
+              <Text key={i} style={s.text}>
+                {g}
+              </Text>
             ))}
           </View>
-        )}
-        <FloatingHearts burst={heartBurst} />
-        <View style={[s.row, { padding: 16 }]}>
+          {reel.live && (
+            <View style={{ padding: 16, alignItems: "flex-start" }}>
+              {comments.map((c, index) => (
+                <LiveComment
+                  key={c.id}
+                  id={c.id}
+                  style={st.liveComment}
+                  exiting={index < comments.length - 4}
+                  onDismiss={() =>
+                    setComments((current) =>
+                      current.filter((item) => item.id !== c.id),
+                    )
+                  }
+                >
+                  <Text style={[s.text, { fontWeight: "600" }]}>@{c.user}</Text>
+                  <Text style={[s.text, { marginTop: 6, fontSize: 14 }]}>
+                    {c.text}
+                  </Text>
+                </LiveComment>
+              ))}
+            </View>
+          )}
+          <FloatingHearts burst={heartBurst} />
           {reel.live ? (
-            <>
-              <TextInput
-                accessibilityLabel="Live comment"
-                value={draft}
-                onChangeText={setDraft}
-                onSubmitEditing={() => {
-                  if (draft.trim()) {
-                    setComments((p) => [
-                      ...p.slice(-3),
-                      {
-                        id: `you-${Date.now()}`,
-                        user: "you",
-                        text: draft.trim(),
-                      },
-                    ]);
-                    setDraft("");
-                  }
-                }}
-                placeholder="Type something…"
-                placeholderTextColor="#ffffff99"
-                style={[
-                  st.textInput,
-                  {
-                    flex: 1,
-                    backgroundColor: "#ffffff0d",
-                    borderColor: "#ffffff66",
-                    marginTop: 0,
-                    borderRadius: 30,
-                  },
-                ]}
-              />
-              <IconButton
-                name="gift-outline"
-                label="Send gift"
-                onPress={onGift}
-              />
-              <IconButton
-                gradient
-                name={draft.trim() ? "send" : "heart"}
-                size={48}
-                label={draft.trim() ? "Send comment" : "Like live stream"}
-                onPress={() => {
-                  if (draft.trim()) {
-                    setComments((p) => [
-                      ...p.slice(-3),
-                      {
-                        id: `you-${Date.now()}`,
-                        user: "you",
-                        text: draft.trim(),
-                      },
-                    ]);
-                    setDraft("");
-                  } else {
-                    onLike();
-                    setHeartBurst((value) => value + 1);
-                  }
-                }}
-              />
-            </>
+            <View style={[s.row, { padding: 16 }]}>
+              <>
+                <TextInput
+                  accessibilityLabel="Live comment"
+                  value={draft}
+                  onChangeText={setDraft}
+                  onSubmitEditing={() => {
+                    if (draft.trim()) {
+                      setComments((p) => [
+                        ...p,
+                        {
+                          id: `you-${Date.now()}`,
+                          user: "you",
+                          text: draft.trim(),
+                        },
+                      ]);
+                      setDraft("");
+                    }
+                  }}
+                  placeholder="Type something…"
+                  placeholderTextColor="#ffffff99"
+                  style={[
+                    st.textInput,
+                    {
+                      flex: 1,
+                      backgroundColor: "#ffffff0d",
+                      borderColor: "#ffffff66",
+                      marginTop: 0,
+                      borderRadius: 30,
+                    },
+                  ]}
+                />
+                <IconButton
+                  name="gift-outline"
+                  label="Send gift"
+                  onPress={onGift}
+                />
+                <IconButton
+                  gradient
+                  name={draft.trim() ? "send" : "heart"}
+                  size={48}
+                  label={draft.trim() ? "Send comment" : "Like live stream"}
+                  onPress={() => {
+                    if (draft.trim()) {
+                      setComments((p) => [
+                        ...p,
+                        {
+                          id: `you-${Date.now()}`,
+                          user: "you",
+                          text: draft.trim(),
+                        },
+                      ]);
+                      setDraft("");
+                    } else {
+                      onLike();
+                      setHeartBurst((value) => value + 1);
+                    }
+                  }}
+                />
+              </>
+            </View>
           ) : (
             <>
-              <IconButton
-                name={liked ? "heart" : "heart-outline"}
-                label="Like reel"
-                onPress={onLike}
-              />
-              <Text style={s.small}>{liked ? "12.3k" : reel.likes}</Text>
-              <View style={{ flex: 1 }} />
-              <IconButton
-                name={saved ? "bookmark" : "bookmark-outline"}
-                label={saved ? "Unsave reel" : "Save reel"}
-                onPress={onSave}
-              />
-              <IconButton
-                name="share-social"
-                label="Share reel"
-                onPress={() =>
-                  Share.share({
-                    message: `${reel.title} by @${reel.user} — RNL`,
-                  })
-                }
+              <View
+                style={{
+                  position: "absolute",
+                  right: 16,
+                  bottom: 112,
+                  gap: 16,
+                  alignItems: "center",
+                }}
+              >
+                <Text style={s.small}>{liked ? "12.3k" : reel.likes}</Text>
+                <IconButton
+                  name={saved ? "bookmark" : "bookmark-outline"}
+                  label={saved ? "Unsave reel" : "Save reel"}
+                  onPress={onSave}
+                />
+                <IconButton
+                  name="share-social"
+                  label="Share reel"
+                  onPress={() =>
+                    Share.share({
+                      message: `${reel.title} by @${reel.user} — RNL`,
+                    })
+                  }
+                />
+              </View>
+              <ViewerReplyBar
+                kind="reel"
+                onReply={onReply}
+                onLike={onLike}
+                liked={liked}
               />
             </>
           )}
-        </View>
-      </SafeAreaView>
+        </SafeAreaView>
+      </KeyboardAvoidingView>
       <PreviewChrome />
     </View>
   );
@@ -2375,9 +2428,10 @@ const st = StyleSheet.create({
   queryTab: { flex: 1, alignItems: "center", paddingVertical: 15 },
   queryActive: { borderBottomWidth: 2, borderBottomColor: colors.accent },
   tabBar: {
-    height: 108,
+    // Overlap the safe-area edge to avoid a seam when the preview is scaled.
+    height: 109,
     position: "absolute",
-    bottom: 0,
+    bottom: -1,
     left: 0,
     right: 0,
     borderTopWidth: 1,
@@ -2444,7 +2498,7 @@ const st = StyleSheet.create({
     backgroundColor: "#151517",
   },
   chipSelected: { borderColor: colors.accent, backgroundColor: "#5f342966" },
-  skip: { marginTop: 24, padding: 18, alignItems: "center" },
+  skip: { marginTop: 12, padding: 12, minHeight: 44, alignItems: "center" },
   option: {
     flexDirection: "row",
     alignItems: "center",

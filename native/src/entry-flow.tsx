@@ -1,8 +1,6 @@
 import { Text, TextInput } from "./typography";
 import React, { useEffect, useRef, useState } from "react";
 import {
-  Animated,
-  Image,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
@@ -17,10 +15,11 @@ import {
   useSafeAreaInsets,
 } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
-import { BrandMark } from "./brand";
+import { BrandMark, StartupLogo } from "./brand";
 import { Action, Divider, Header, Icon, Sheet, type IconName } from "./ui";
-import { Reveal, SpringPressable, useReducedMotion } from "./motion";
+import { Reveal, SpringPressable } from "./motion";
 import { colors } from "./data";
+import { EntryBackground } from "./entry-background";
 
 const sessionKey = "@rnl/demo-session/v1";
 export type DemoSession = { username: string; demo: true };
@@ -45,14 +44,11 @@ export function EntryFlow({ onComplete }: EntryProps) {
   const [remember, setRemember] = useState(false);
   const [error, setError] = useState("");
   const [info, setInfo] = useState("");
-  const [provider, setProvider] = useState("");
   const [busy, setBusy] = useState(false);
   const [newAccount, setNewAccount] = useState(false);
   const session = useRef<DemoSession>({ username: "arnelle", demo: true });
   const submitting = useRef(false);
   const insets = useSafeAreaInsets();
-  const reduced = useReducedMotion();
-  const glow = useRef(new Animated.Value(0)).current;
   useEffect(() => {
     let active = true;
     const timer = setTimeout(async () => {
@@ -79,25 +75,6 @@ export function EntryFlow({ onComplete }: EntryProps) {
     // The startup check runs once; callbacks after navigation must not restart it.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-  useEffect(() => {
-    if (reduced || route !== "splash") return;
-    const animation = Animated.loop(
-      Animated.sequence([
-        Animated.timing(glow, {
-          toValue: 1,
-          duration: 1000,
-          useNativeDriver: Platform.OS !== "web",
-        }),
-        Animated.timing(glow, {
-          toValue: 0,
-          duration: 1000,
-          useNativeDriver: Platform.OS !== "web",
-        }),
-      ]),
-    );
-    animation.start();
-    return () => animation.stop();
-  }, [glow, reduced, route]);
   function navigate(next: Route) {
     setError("");
     setPassword("");
@@ -167,8 +144,12 @@ export function EntryFlow({ onComplete }: EntryProps) {
   const social = (name: string, full = false) => (
     <Action
       outline
-      onPress={() => setProvider(name)}
-      style={[a.social, full && a.welcomeSocial]}
+      disabled={busy}
+      onPress={() => {
+        session.current = { username: "arnelle", demo: true };
+        void complete(true, false);
+      }}
+      style={a.social}
       label={`${full ? "Login with " : ""}${name}`}
     >
       <View style={a.buttonRow}>
@@ -208,392 +189,318 @@ export function EntryFlow({ onComplete }: EntryProps) {
       />
     </View>
   );
+  if (route === "splash") return <StartupLogo />;
   return (
     <LinearGradient colors={["#272828", "#111212"]} style={{ flex: 1 }}>
-      {route !== "intro" && (
-        <>
-          <Image
-            source={{
-              uri: "https://images.unsplash.com/photo-1448375240586-882707db888b?w=900&q=85&fit=crop",
-            }}
-            style={[
-              StyleSheet.absoluteFillObject,
-              { opacity: route === "welcome" ? 0.38 : 0.12 },
-            ]}
-            resizeMode="cover"
-            blurRadius={route === "welcome" ? 0 : 16}
-          />
-          <LinearGradient
-            colors={["#24262220", "#13171855", "#080a09ee"]}
-            style={StyleSheet.absoluteFillObject}
-          />
-        </>
-      )}
+      <EntryBackground blurred={route !== "welcome"} />
       <SafeAreaView style={{ flex: 1 }} edges={["top"]}>
-        {route === "splash" ? (
-          <View style={a.splash} accessibilityLabel="Arnelle splash screen">
-            <Animated.View
-              style={{
-                transform: [
-                  {
-                    scale: glow.interpolate({
-                      inputRange: [0, 1],
-                      outputRange: [1, 1.045],
-                    }),
-                  },
-                ],
-              }}
-            >
-              <BrandMark size={108} />
-            </Animated.View>
-            <Text style={a.wordmark}>ARNELLE</Text>
-            <Text style={a.subtitle}>
-              Every photo is a doorway back{`\n`}to a memory.
-            </Text>
-            <View style={a.dash} />
-          </View>
-        ) : (
-          <Reveal identity={route} style={{ flex: 1 }}>
-            {route !== "welcome" && (
-              <Header
-                title={
-                  route === "signup"
-                    ? "Sign up"
+        <Reveal identity={route} style={{ flex: 1 }}>
+          {route !== "welcome" && (
+            <Header
+              title={
+                route === "signup"
+                  ? "Sign up"
+                  : route === "intro"
+                    ? "Get started"
+                    : route === "forgot"
+                      ? "Reset password"
+                      : "Login"
+              }
+              left="chevron-back"
+              onLeft={() =>
+                navigate(
+                  route === "forgot"
+                    ? "login"
                     : route === "intro"
-                      ? "Get started"
-                      : route === "forgot"
-                        ? "Reset password"
-                        : "Login"
-                }
-                left="chevron-back"
-                onLeft={() =>
-                  navigate(
-                    route === "forgot"
-                      ? "login"
-                      : route === "intro"
-                        ? "signup"
-                        : "welcome",
-                  )
-                }
-                right="help-circle-outline"
-                onRight={() =>
-                  setInfo(
-                    "Explore Arnelle with the demo login: arnelle / demo1234. Sign up previews account setup locally. Connect an authentication provider before using real accounts.",
-                  )
-                }
-              />
-            )}
-            <KeyboardAvoidingView
-              style={{ flex: 1 }}
-              behavior={Platform.OS === "ios" ? "padding" : undefined}
+                      ? "signup"
+                      : "welcome",
+                )
+              }
+              right="help-circle-outline"
+              onRight={() =>
+                setInfo(
+                  "Explore Arnelle with the demo login: arnelle / demo1234. Sign up previews account setup locally. Connect an authentication provider before using real accounts.",
+                )
+              }
+            />
+          )}
+          <KeyboardAvoidingView
+            style={{ flex: 1 }}
+            behavior={Platform.OS === "ios" ? "padding" : undefined}
+          >
+            <ScrollView
+              keyboardShouldPersistTaps="handled"
+              contentContainerStyle={[
+                a.body,
+                { paddingBottom: insets.bottom + 24 },
+                route === "welcome" && { paddingTop: 48 },
+              ]}
             >
-              <ScrollView
-                keyboardShouldPersistTaps="handled"
-                contentContainerStyle={[
-                  a.body,
-                  { paddingBottom: insets.bottom + 24 },
-                  route === "welcome" && { paddingTop: 48 },
-                ]}
-              >
-                {route === "welcome" ? (
-                  <>
-                    <View style={a.welcomeBrand}>
-                      <BrandMark size={108} />
-                      <Text style={a.wordmark}>ARNELLE</Text>
-                      <Text style={a.subtitle}>
-                        Every photo is a doorway back{`\n`}to a memory.
-                      </Text>
-                      <View style={a.dash} />
-                    </View>
-                    <View style={{ flex: 1, minHeight: 48 }} />
-                    <Action onPress={() => navigate("login")}>Login</Action>
-                    {social("Facebook", true)}
-                    {social("Google", true)}
-                    <Divider>OR</Divider>
-                    <Action
-                      outline
-                      onPress={() => navigate("signup")}
-                      label="Create account"
-                    >
-                      <View style={a.buttonRow}>
-                        <Icon name="person-add" size={19} />
-                        <Text style={a.buttonText}>Create account</Text>
-                      </View>
-                    </Action>
-                    <View style={{ height: 24 }} />
-                  </>
-                ) : route === "intro" ? (
-                  <>
-                    <View style={a.introCenter}>
-                      <LinearGradient
-                        colors={colors.gradient}
-                        style={a.bulbRing}
-                      >
-                        <View style={a.bulbInner}>
-                          <Icon
-                            name="bulb-outline"
-                            size={58}
-                            color={colors.accent}
-                          />
-                        </View>
-                      </LinearGradient>
-                      <Text
-                        style={[a.title, { marginTop: 36, marginBottom: 12 }]}
-                      >
-                        Let’s setup your account
-                      </Text>
-                      <Text style={a.description}>
-                        A little about you. A few things you love.{`\n`}Find the
-                        people who make it feel like home.
-                      </Text>
-                      <View style={a.dots}>
-                        {[0, 1, 2, 3].map((i) => (
-                          <View
-                            key={i}
-                            style={[
-                              a.dot,
-                              i === 0 && {
-                                backgroundColor: "#fff",
-                                borderColor: "#fff",
-                              },
-                            ]}
-                          />
-                        ))}
-                      </View>
-                    </View>
-                    <Action disabled={busy} onPress={() => void complete()}>
-                      Get started
-                    </Action>
-                    <Action
-                      outline
-                      disabled={busy}
-                      style={{ marginTop: 24 }}
-                      onPress={() => void complete(true)}
-                    >
-                      Skip →
-                    </Action>
-                  </>
-                ) : (
-                  <>
-                    <Text style={a.title}>
-                      {route === "login"
-                        ? "Welcome back"
-                        : route === "signup"
-                          ? "Create your account"
-                          : "Forgot your password?"}
+              {route === "welcome" ? (
+                <>
+                  <View style={a.welcomeBrand}>
+                    <BrandMark size={108} />
+                    <Text style={a.wordmark}>ARNELLE</Text>
+                    <Text style={a.subtitle}>
+                      Every photo is a doorway back{`\n`}to a memory.
                     </Text>
-                    {route === "forgot" ? (
-                      <>
-                        <Text style={[a.description, { marginBottom: 32 }]}>
-                          Enter the email linked to your account.
-                        </Text>
-                        {field("Email", "mail", email, setEmail, {
+                    <View style={a.dash} />
+                  </View>
+                  <View style={{ flex: 1, minHeight: 48 }} />
+                  <Action onPress={() => navigate("login")}>Login</Action>
+                  {social("Facebook", true)}
+                  {social("Google", true)}
+                  <Divider style={{ marginTop: 16, marginBottom: 16 }}>
+                    OR
+                  </Divider>
+                  <Action
+                    outline
+                    onPress={() => navigate("signup")}
+                    label="Create account"
+                  >
+                    <View style={a.buttonRow}>
+                      <Icon name="person-add" size={19} />
+                      <Text style={a.buttonText}>Create account</Text>
+                    </View>
+                  </Action>
+                  <View style={{ height: 24 }} />
+                </>
+              ) : route === "intro" ? (
+                <>
+                  <View style={a.introCenter}>
+                    <LinearGradient colors={colors.gradient} style={a.bulbRing}>
+                      <View style={a.bulbInner}>
+                        <Icon
+                          name="bulb-outline"
+                          size={58}
+                          color={colors.accent}
+                        />
+                      </View>
+                    </LinearGradient>
+                    <Text
+                      style={[a.title, { marginTop: 36, marginBottom: 12 }]}
+                    >
+                      Let’s setup your account
+                    </Text>
+                    <Text style={a.description}>
+                      A little about you. A few things you love.{`\n`}Find the
+                      people who make it feel like home.
+                    </Text>
+                    <View style={a.dots}>
+                      {[0, 1, 2, 3].map((i) => (
+                        <View
+                          key={i}
+                          style={[
+                            a.dot,
+                            i === 0 && {
+                              backgroundColor: "#fff",
+                              borderColor: "#fff",
+                            },
+                          ]}
+                        />
+                      ))}
+                    </View>
+                  </View>
+                  <Action disabled={busy} onPress={() => void complete()}>
+                    Get started
+                  </Action>
+                  <Action
+                    outline
+                    disabled={busy}
+                    style={{ marginTop: 12 }}
+                    onPress={() => void complete(true)}
+                  >
+                    Skip →
+                  </Action>
+                </>
+              ) : (
+                <>
+                  <Text style={a.title}>
+                    {route === "login"
+                      ? "Welcome back"
+                      : route === "signup"
+                        ? "Create your account"
+                        : "Forgot your password?"}
+                  </Text>
+                  {route === "forgot" ? (
+                    <>
+                      <Text style={[a.description, { marginBottom: 32 }]}>
+                        Enter the email linked to your account.
+                      </Text>
+                      {field("Email", "mail", email, setEmail, {
+                        keyboardType: "email-address",
+                        autoComplete: "email",
+                      })}
+                      <Action
+                        style={{ marginTop: 16 }}
+                        onPress={() => {
+                          if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim()))
+                            setError("Enter a valid email address.");
+                          else {
+                            setError("");
+                            setInfo(
+                              "Reset flow preview complete. This template has no email service, so no reset email was sent. Use arnelle / demo1234 to explore.",
+                            );
+                          }
+                        }}
+                      >
+                        Send reset link
+                      </Action>
+                      <Action
+                        outline
+                        style={{ marginTop: 16 }}
+                        onPress={() => navigate("login")}
+                      >
+                        Back to login
+                      </Action>
+                    </>
+                  ) : (
+                    <>
+                      {field(
+                        "Username",
+                        "person-circle",
+                        username,
+                        setUsername,
+                        { autoComplete: "username", returnKeyType: "next" },
+                      )}
+                      {route === "signup" &&
+                        field("Email", "mail", email, setEmail, {
                           keyboardType: "email-address",
                           autoComplete: "email",
                         })}
-                        <Action
-                          style={{ marginTop: 16 }}
-                          onPress={() => {
-                            if (
-                              !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())
-                            )
-                              setError("Enter a valid email address.");
-                            else {
-                              setError("");
-                              setInfo(
-                                "Reset flow preview complete. This template has no email service, so no reset email was sent. Use arnelle / demo1234 to explore.",
-                              );
-                            }
-                          }}
-                        >
-                          Send reset link
-                        </Action>
-                        <Action
-                          outline
-                          style={{ marginTop: 16 }}
-                          onPress={() => navigate("login")}
-                        >
-                          Back to login
-                        </Action>
-                      </>
-                    ) : (
-                      <>
-                        {field(
-                          "Username",
-                          "person-circle",
-                          username,
-                          setUsername,
-                          { autoComplete: "username", returnKeyType: "next" },
-                        )}
-                        {route === "signup" &&
-                          field("Email", "mail", email, setEmail, {
-                            keyboardType: "email-address",
-                            autoComplete: "email",
-                          })}
-                        {field(
-                          "Password",
+                      {field("Password", "lock-closed", password, setPassword, {
+                        secureTextEntry: true,
+                        autoComplete: "off",
+                        onSubmitEditing: route === "login" ? login : undefined,
+                      })}
+                      {route === "signup" &&
+                        field(
+                          "Repeat password",
                           "lock-closed",
-                          password,
-                          setPassword,
+                          repeat,
+                          setRepeat,
                           {
                             secureTextEntry: true,
                             autoComplete: "off",
-                            onSubmitEditing:
-                              route === "login" ? login : undefined,
+                            onSubmitEditing: signup,
                           },
                         )}
-                        {route === "signup" &&
-                          field(
-                            "Repeat password",
-                            "lock-closed",
-                            repeat,
-                            setRepeat,
-                            {
-                              secureTextEntry: true,
-                              autoComplete: "off",
-                              onSubmitEditing: signup,
-                            },
-                          )}
-                        {route === "login" && (
-                          <View style={a.loginOptions}>
-                            <View style={a.buttonRow}>
-                              <Switch
-                                accessibilityLabel="Stay logged in"
-                                value={remember}
-                                onValueChange={setRemember}
-                                trackColor={{
-                                  false: "#666",
-                                  true: colors.accent,
-                                }}
-                                style={{ transform: [{ scale: 0.8 }] }}
-                              />
-                              <Text style={a.small}>Stay logged in</Text>
-                            </View>
-                            <SpringPressable
-                              accessibilityRole="button"
-                              onPress={() => navigate("forgot")}
-                            >
-                              <Text style={[a.small, a.link]}>
-                                Forgot password?
-                              </Text>
-                            </SpringPressable>
-                          </View>
-                        )}
-                        {!!error && (
-                          <Text accessibilityRole="alert" style={a.error}>
-                            {error}
-                          </Text>
-                        )}
-                        <Action
-                          disabled={busy}
-                          style={{ marginTop: route === "signup" ? 12 : 16 }}
-                          onPress={route === "login" ? login : signup}
-                        >
-                          {busy
-                            ? "Opening…"
-                            : route === "login"
-                              ? "Login"
-                              : "Create account"}
-                        </Action>
-                        {route === "signup" ? (
-                          <>
-                            <Text style={[a.description, { marginTop: 24 }]}>
-                              By creating an account you agree to
-                            </Text>
-                            <SpringPressable
-                              accessibilityRole="button"
-                              onPress={() =>
-                                setInfo(
-                                  "Arnelle is a free MIT-licensed demo template. Accounts, messages, posts, and gift credits stay local. No email is sent and no password is stored. Replace these demo terms with your own terms before launching a service.",
-                                )
+                      {route === "login" && (
+                        <View style={a.loginOptions}>
+                          <View style={a.buttonRow}>
+                            <Switch
+                              accessibilityLabel="Stay logged in"
+                              value={remember}
+                              onValueChange={setRemember}
+                              thumbColor={
+                                remember ? colors.accentLight : "#f4f4f4"
                               }
-                            >
-                              <Text style={[a.description, a.link]}>
-                                all terms of use
-                              </Text>
-                            </SpringPressable>
-                            <Divider>OR</Divider>
-                            <Action outline onPress={() => navigate("login")}>
-                              Login
-                            </Action>
-                            <Text style={a.demoNote}>
-                              Local demo account · Use sample details
+                              trackColor={{
+                                false: "#666",
+                                true: colors.accent,
+                              }}
+                              style={{ transform: [{ scale: 0.8 }] }}
+                            />
+                            <Text style={a.small}>Stay logged in</Text>
+                          </View>
+                          <SpringPressable
+                            accessibilityRole="button"
+                            onPress={() => navigate("forgot")}
+                          >
+                            <Text style={[a.small, a.link]}>
+                              Forgot password?
                             </Text>
-                          </>
-                        ) : (
-                          <>
-                            <Text style={a.demoNote}>
-                              Template demo · arnelle / demo1234
+                          </SpringPressable>
+                        </View>
+                      )}
+                      {!!error && (
+                        <Text accessibilityRole="alert" style={a.error}>
+                          {error}
+                        </Text>
+                      )}
+                      <Action
+                        disabled={busy}
+                        style={{ marginTop: route === "signup" ? 12 : 16 }}
+                        onPress={route === "login" ? login : signup}
+                      >
+                        {busy
+                          ? "Opening…"
+                          : route === "login"
+                            ? "Login"
+                            : "Create account"}
+                      </Action>
+                      {route === "signup" ? (
+                        <>
+                          <Text style={[a.description, { marginTop: 24 }]}>
+                            By creating an account you agree to
+                          </Text>
+                          <SpringPressable
+                            accessibilityRole="button"
+                            onPress={() =>
+                              setInfo(
+                                "Arnelle is a free MIT-licensed demo template. Accounts, messages, posts, and gift credits stay local. No email is sent and no password is stored. Replace these demo terms with your own terms before launching a service.",
+                              )
+                            }
+                          >
+                            <Text style={[a.description, a.link]}>
+                              all terms of use
                             </Text>
-                            <Divider>CREATE ACCOUNT</Divider>
-                            {social("Facebook")}
-                            {social("Google")}
-                            <Action
-                              outline
-                              style={a.social}
-                              onPress={() => navigate("signup")}
-                              label="Email or number"
-                            >
-                              <View style={a.buttonRow}>
-                                <Icon name="mail" size={20} />
-                                <Text style={a.buttonText}>
-                                  Email or number
-                                </Text>
-                              </View>
-                            </Action>
-                          </>
-                        )}
-                      </>
-                    )}
-                    {route === "forgot" && !!error && (
-                      <Text accessibilityRole="alert" style={a.error}>
-                        {error}
-                      </Text>
-                    )}
-                  </>
-                )}
-              </ScrollView>
-            </KeyboardAvoidingView>
-          </Reveal>
-        )}
+                          </SpringPressable>
+                          <Divider>OR</Divider>
+                          <Action outline onPress={() => navigate("login")}>
+                            Login
+                          </Action>
+                          <Text style={a.demoNote}>
+                            Local demo account · Use sample details
+                          </Text>
+                        </>
+                      ) : (
+                        <>
+                          <Text style={a.demoNote}>
+                            Template demo · arnelle / demo1234
+                          </Text>
+                          <Divider style={{ marginTop: 24, marginBottom: 4 }}>
+                            CREATE ACCOUNT
+                          </Divider>
+                          {social("Facebook")}
+                          {social("Google")}
+                          <Action
+                            outline
+                            style={a.social}
+                            onPress={() => navigate("signup")}
+                            label="Email or number"
+                          >
+                            <View style={a.buttonRow}>
+                              <Icon name="mail" size={20} />
+                              <Text style={a.buttonText}>Email or number</Text>
+                            </View>
+                          </Action>
+                        </>
+                      )}
+                    </>
+                  )}
+                  {route === "forgot" && !!error && (
+                    <Text accessibilityRole="alert" style={a.error}>
+                      {error}
+                    </Text>
+                  )}
+                </>
+              )}
+            </ScrollView>
+          </KeyboardAvoidingView>
+        </Reveal>
       </SafeAreaView>
-      <Sheet
-        visible={!!info || !!provider}
-        title={provider ? `Continue with ${provider}` : "Good to know"}
-        onClose={() => {
-          setInfo("");
-          setProvider("");
-        }}
-      >
+      <Sheet visible={!!info} title="Good to know" onClose={() => setInfo("")}>
         <Text style={[a.description, { textAlign: "left", marginBottom: 24 }]}>
-          {provider
-            ? `${provider} sign-in needs your own OAuth configuration. You can explore the complete flow with a local demo session now. No social account will be connected.`
-            : info}
+          {info}
         </Text>
-        <Action
-          onPress={() => {
-            if (provider) {
-              session.current = { username: "arnelle", demo: true };
-              setProvider("");
-              setNewAccount(false);
-              void complete(true, false);
-            } else setInfo("");
-          }}
-        >
-          {provider ? "Continue in demo mode" : "Got it"}
-        </Action>
+        <Action onPress={() => setInfo("")}>Got it</Action>
       </Sheet>
     </LinearGradient>
   );
 }
 const a = StyleSheet.create({
   body: { flexGrow: 1, paddingHorizontal: 20 },
-  splash: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    paddingBottom: 100,
-  },
   welcomeBrand: { alignItems: "center" },
   wordmark: {
     color: "#fff",
@@ -645,8 +552,7 @@ const a = StyleSheet.create({
     gap: 8,
   },
   buttonText: { color: "#fff", fontSize: 16, fontWeight: "600" },
-  social: { marginTop: 24 },
-  welcomeSocial: { marginTop: 32 },
+  social: { marginTop: 12 },
   loginOptions: {
     flexDirection: "row",
     justifyContent: "space-between",

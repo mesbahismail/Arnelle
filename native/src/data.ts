@@ -15,6 +15,7 @@ export const colors = {
   text: "#faf9f7",
   muted: "#aaaaaa",
   accent: "#f47750",
+  accentLight: "#ffb395",
   gradient: ["#ffc04b", "#f77b43", "#df326f"] as const,
 };
 export const photos = {

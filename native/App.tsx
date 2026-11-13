@@ -1671,8 +1671,10 @@ function RNL() {
                 screen,
               ) && (
                 <BlurView
-                  intensity={70}
-                  tint="dark"
+                  // Thin dark material: a flat grey a little lighter than the
+                  // screen when nothing is behind it, frosted when content is.
+                  intensity={100}
+                  tint="systemThinMaterialDark"
                   style={[
                     st.tabBar,
                     {
@@ -1681,19 +1683,6 @@ function RNL() {
                     },
                   ]}
                 >
-                  <LinearGradient
-                    pointerEvents="none"
-                    colors={["#ffffff08", "#17202122", "#080909b8"]}
-                    locations={[0, 0.45, 1]}
-                    style={StyleSheet.absoluteFillObject}
-                  />
-                  <LinearGradient
-                    pointerEvents="none"
-                    colors={["#ef79561a", "#71528120", "#57989a20"]}
-                    start={{ x: 0, y: 0 }}
-                    end={{ x: 1, y: 1 }}
-                    style={StyleSheet.absoluteFillObject}
-                  />
                   {tabs.map((t) => (
                     <Pressable
                       key={t.title}
@@ -2475,7 +2464,6 @@ const st = StyleSheet.create({
     overflow: "hidden",
     flexDirection: "row",
     paddingTop: 24,
-    backgroundColor: "#20242466",
   },
   tab: {
     flex: 1,

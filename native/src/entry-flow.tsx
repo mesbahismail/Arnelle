@@ -15,7 +15,7 @@ import {
   useSafeAreaInsets,
 } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
-import { BrandMark, StartupLogo } from "./brand";
+import { WelcomeIntro } from "./welcome-intro";
 import { Action, Divider, Header, Icon, Sheet, type IconName } from "./ui";
 import { Reveal, SpringPressable } from "./motion";
 import { colors } from "./data";
@@ -189,13 +189,13 @@ export function EntryFlow({ onComplete }: EntryProps) {
       />
     </View>
   );
-  if (route === "splash") return <StartupLogo />;
+  const welcome = route === "splash" || route === "welcome";
   return (
     <LinearGradient colors={["#272828", "#111212"]} style={{ flex: 1 }}>
-      <EntryBackground blurred={route !== "welcome"} />
+      <EntryBackground blurred={!welcome} />
       <SafeAreaView style={{ flex: 1 }} edges={["top"]}>
-        <Reveal identity={route} style={{ flex: 1 }}>
-          {route !== "welcome" && (
+        <Reveal identity={route} style={{ flex: 1 }} animate={!welcome}>
+          {!welcome && (
             <Header
               title={
                 route === "signup"
@@ -229,42 +229,35 @@ export function EntryFlow({ onComplete }: EntryProps) {
             behavior={Platform.OS === "ios" ? "padding" : undefined}
           >
             <ScrollView
+              scrollEnabled={route !== "splash"}
               keyboardShouldPersistTaps="handled"
               contentContainerStyle={[
                 a.body,
                 { paddingBottom: insets.bottom + 24 },
-                route === "welcome" && { paddingTop: 48 },
+                welcome && { paddingTop: 48 },
               ]}
             >
-              {route === "welcome" ? (
-                <>
-                  <View style={a.welcomeBrand}>
-                    <BrandMark size={108} />
-                    <Text style={a.wordmark}>ARNELLE</Text>
-                    <Text style={a.subtitle}>
-                      Every photo is a doorway back{`\n`}to a memory.
-                    </Text>
-                    <View style={a.dash} />
-                  </View>
-                  <View style={{ flex: 1, minHeight: 48 }} />
+              {welcome ? (
+                <WelcomeIntro loading={route === "splash"}>
                   <Action onPress={() => navigate("login")}>Login</Action>
                   {social("Facebook", true)}
                   {social("Google", true)}
-                  <Divider style={{ marginTop: 16, marginBottom: 16 }}>
-                    OR
-                  </Divider>
-                  <Action
-                    outline
-                    onPress={() => navigate("signup")}
-                    label="Create account"
-                  >
-                    <View style={a.buttonRow}>
-                      <Icon name="person-add" size={19} />
-                      <Text style={a.buttonText}>Create account</Text>
-                    </View>
-                  </Action>
-                  <View style={{ height: 24 }} />
-                </>
+                  <View>
+                    <Divider style={{ marginTop: 16, marginBottom: 16 }}>
+                      OR
+                    </Divider>
+                    <Action
+                      outline
+                      onPress={() => navigate("signup")}
+                      label="Create account"
+                    >
+                      <View style={a.buttonRow}>
+                        <Icon name="person-add" size={19} />
+                        <Text style={a.buttonText}>Create account</Text>
+                      </View>
+                    </Action>
+                  </View>
+                </WelcomeIntro>
               ) : route === "intro" ? (
                 <>
                   <View style={a.introCenter}>
@@ -501,22 +494,6 @@ export function EntryFlow({ onComplete }: EntryProps) {
 }
 const a = StyleSheet.create({
   body: { flexGrow: 1, paddingHorizontal: 20 },
-  welcomeBrand: { alignItems: "center" },
-  wordmark: {
-    color: "#fff",
-    fontSize: 32,
-    fontWeight: "700",
-    letterSpacing: 2,
-    marginTop: 24,
-    marginBottom: 8,
-  },
-  subtitle: {
-    color: "#e3e3e3",
-    fontSize: 20,
-    lineHeight: 30,
-    textAlign: "center",
-  },
-  dash: { height: 4, width: 32, backgroundColor: "#b3b3ad", marginTop: 18 },
   title: {
     color: "#fff",
     fontSize: 26,

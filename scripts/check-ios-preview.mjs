@@ -63,10 +63,46 @@ Object.defineProperty(w.navigator, "userAgent", {
 w.eval(source);
 const wait = (ms = 100) => new Promise((resolve) => setTimeout(resolve, ms));
 await wait(100);
+for (
+  let i = 0;
+  i < 40 && !w.document.querySelector('[data-testid="startup-logo"]');
+  i++
+)
+  await wait(25);
 const startup = w.document.querySelector('[data-testid="startup-logo"]');
 if (!startup?.querySelector("svg") || startup.textContent.trim())
   throw new Error("Startup loader must show only the logo");
-await wait(1700);
+for (
+  let i = 0;
+  i < 20 && !w.document.querySelector('[data-testid="welcome-logo"]');
+  i++
+)
+  await wait(50);
+const welcomeLogo = w.document.querySelector('[data-testid="welcome-logo"]');
+const welcomeCopy = w.document.querySelector('[data-testid="welcome-copy"]');
+const firstWelcomeAction = w.document.querySelector(
+  '[data-testid="welcome-action-0"]',
+);
+if (!welcomeLogo || !welcomeCopy || !firstWelcomeAction)
+  throw new Error("Splash and welcome must share the logo layout");
+const initialLogoTransform = welcomeLogo.style.transform;
+if (
+  Number(w.getComputedStyle(welcomeCopy).opacity) !== 0 ||
+  Number(w.getComputedStyle(firstWelcomeAction).opacity) !== 0
+)
+  throw new Error("Welcome content appeared before loading finished");
+await wait(1250);
+if (
+  w.document.querySelector('[data-testid="welcome-logo"]') !== welcomeLogo ||
+  welcomeLogo.style.transform === initialLogoTransform
+)
+  throw new Error("The same splash logo must animate upward into welcome");
+await wait(1100);
+if (
+  Number(w.getComputedStyle(welcomeCopy).opacity) !== 1 ||
+  Number(w.getComputedStyle(firstWelcomeAction).opacity) !== 1
+)
+  throw new Error("Welcome reveal did not finish");
 const skeletonPages = new Set();
 async function press(name, settle = true) {
   const nodes = [
@@ -117,14 +153,16 @@ function expectButtonMargin(label, points) {
     );
 }
 function fill(label, value) {
-  const input = [...w.document.querySelectorAll("input")].find(
+  const input = [...w.document.querySelectorAll("input, textarea")].find(
     (n) => n.getAttribute("aria-label") === label,
   );
   if (!input) throw new Error(`Missing input: ${label}`);
-  Object.getOwnPropertyDescriptor(
-    w.HTMLInputElement.prototype,
-    "value",
-  ).set.call(input, value);
+  // Multiline TextInputs render as <textarea> on web.
+  const proto =
+    input instanceof w.HTMLTextAreaElement
+      ? w.HTMLTextAreaElement.prototype
+      : w.HTMLInputElement.prototype;
+  Object.getOwnPropertyDescriptor(proto, "value").set.call(input, value);
   input.dispatchEvent(new w.Event("input", { bubbles: true }));
 }
 function entryBlur() {
@@ -225,8 +263,62 @@ try {
   expectText("Browse");
   await press("Communities");
   expectText("Art World");
+  for (const name of [
+    "Art World",
+    "The Wayfarers",
+    "Outside Together",
+    "Soundwave Society",
+  ]) {
+    await press(`Open ${name}`);
+    const posts = w.document.querySelectorAll('[data-testid="community-post"]');
+    if (posts.length !== 8)
+      throw new Error(`${name} should contain eight demo posts`);
+    if (name === "Art World") {
+      fill("Community post", "A new sketch from my studio.");
+      await wait();
+      await press("Publish post");
+      const updatedPosts = w.document.querySelectorAll(
+        '[data-testid="community-post"]',
+      );
+      if (
+        updatedPosts.length !== 9 ||
+        !updatedPosts[0].textContent.includes("A new sketch from my studio.")
+      )
+        throw new Error("New community posts must appear above the demo feed");
+    }
+    await press("Go back");
+  }
   await press("Messaging");
   expectText("@talia");
+  for (const handle of ["haisenberg", "mariam", "nara", "brook", "daria"]) {
+    await press(`Chat with ${handle}`);
+    const count = w.document.querySelectorAll(
+      '[data-testid="chat-message"]',
+    ).length;
+    if (count < 7)
+      throw new Error(`${handle} should have a complete demo conversation`);
+    if (
+      handle !== "mariam" &&
+      !w.document.querySelector('[data-testid="chat-photo"]')
+    )
+      throw new Error(`${handle} should have an incoming photo`);
+    if (handle === "haisenberg") {
+      fill("Chat reply", "That view is incredible! 🙌");
+      await wait();
+      await press("Send reply");
+      expectText("That view is incredible! 🙌");
+      if (
+        w.document.querySelectorAll('[data-testid="chat-message"]').length !==
+          count + 1 ||
+        w.document.querySelectorAll('[data-testid="chat-photo"]').length !== 2
+      )
+        throw new Error(
+          "Sending a reply must preserve the seeded messages and photos",
+        );
+    }
+    await press("Go back");
+  }
+  expectText("You: That view is incredible! 🙌");
   await press("View story by talia");
   expectText("Story 1 of 3");
   if (w.document.querySelector('[aria-label="Send gift"]'))
@@ -245,10 +337,29 @@ try {
   expectText("Messaging");
   await press("Chat with talia");
   expectText("Love this story!");
-  expectText("Open video");
-  await press("Open shared reel");
+  expectText("Open story");
+  const sharedStoryCard = w.document.querySelector(
+    '[aria-label="Open shared story"]',
+  );
+  if (
+    sharedStoryCard.querySelector("img") ||
+    !sharedStoryCard.querySelector("svg")
+  )
+    throw new Error(
+      "Shared story card must use an icon instead of a thumbnail",
+    );
+  await press("Open shared story");
+  const sharedStory = w.document.querySelector('[data-testid="story-viewer"]');
+  if (!sharedStory?.textContent.includes("@nara"))
+    throw new Error("Shared story must open the original creator’s story");
+  expectText("Story 1 of 3");
+  await press("Close story");
+  expectText("Open story");
+  await press("Go back");
+  await press("Browse");
+  await press("A little golden hour magic by nara");
   if (!w.document.querySelector("video"))
-    throw new Error("Shared reel viewer did not open");
+    throw new Error("Reel viewer did not open");
   if (w.document.querySelector('[aria-label="Send gift"]'))
     throw new Error("Regular reels must not show a gift button");
   fill("Reel reply", "Beautiful golden hour!");
@@ -258,8 +369,7 @@ try {
   if (w.document.querySelector('[aria-label="Reel reply"]').value)
     throw new Error("Reel reply did not clear after sending");
   await press("Close reel");
-  expectText("Open video");
-  await press("Go back");
+  await press("Messaging");
   await press("Chat with nara");
   expectText("Beautiful golden hour!");
   await press("Go back");
@@ -392,7 +502,7 @@ try {
     throw new Error("Password leaked into local storage");
   if (errors.length) throw new Error(`Runtime errors: ${errors.join("\n")}`);
   console.log(
-    "PASS: splash/welcome, login validation, recovery, sign-up validation, setup, onboarding, all five tabs, menu, logout, direct login, avatar stories, shared-reel playback, two-column profile layout, bundled nature video, frequent live comments, white hearts, gift debit, full-width Discover dividers, capture controls, timer cancellation, and filtered capture.",
+    "PASS: splash/welcome, login validation, recovery, sign-up validation, setup, onboarding, all five tabs, menu, logout, direct login, avatar stories, shared-story navigation, reel playback, two-column profile layout, bundled nature video, frequent live comments, white hearts, gift debit, full-width Discover dividers, capture controls, timer cancellation, and filtered capture.",
   );
   console.log(
     "PASS: iOS chrome, no persisted passwords, and zero captured runtime errors.",

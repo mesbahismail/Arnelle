@@ -23,6 +23,10 @@ npm run dev
 
 Open http://localhost:3000. On desktop the iPhone screen stays at its original proportions and scales down only when necessary to fit the window. On a phone it fills the viewport. Re-run `npm run preview:build` after changing native screens. `npm run build` rebuilds the preview automatically.
 
+## Deploy to Vercel
+
+Use the repository root as the Vercel project root and keep the build command as `npm run build`. The checked-in `vercel.json` installs both the root and `native/` dependencies from their lockfiles before building. The native dependencies are required because the build exports the Expo browser preview before building Next.js.
+
 ## Run as a native iOS app
 
 ```sh
@@ -39,7 +43,7 @@ Animated splash → welcome → demo login / sign-up / recovery → setup → on
 
 The reference-inspired Arnelle bird mark is shared by the welcome screen, splash, app icon, and browser icon. Press feedback and screen transitions respect Reduce Motion. Demo login: **arnelle / demo1234**. Passwords are never persisted. Facebook and Google login open Discover directly with a local demo session. Recovery previews the flow without sending email.
 
-All screens use React Native primitives, Lucide icons, and bundled DM Sans typography. Login goes straight to Discover; setup is reserved for sign-up. Avatar story rings open a story viewer, and shared videos in conversations open the reel viewer. Profile reels stay in two columns. Discover has full-width section dividers. Capture follows the supplied full-screen layout with a circular shutter, timer, camera settings, and filter strip. Native UI, data, persistence, media helpers, and preview share one source. The palette and spacing tokens are in `native/src/data.ts`.
+All screens use React Native primitives, Lucide icons, and bundled DM Sans typography. Login goes straight to Discover; setup is reserved for sign-up. Avatar story rings open a story viewer, and circular shared-story cards in conversations open the creator’s story viewer. Profile reels stay in two columns. Discover has full-width section dividers. Capture follows the supplied full-screen layout with a circular shutter, timer, camera settings, and filter strip. Native UI, data, persistence, media helpers, and preview share one source. The palette and spacing tokens are in `native/src/data.ts`.
 
 ## Validate and distribute
 

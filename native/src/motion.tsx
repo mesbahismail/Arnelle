@@ -72,15 +72,17 @@ export function Reveal({
   children,
   identity,
   style,
+  animate = true,
 }: {
   children: React.ReactNode;
   identity: string;
   style?: StyleProp<ViewStyle>;
+  animate?: boolean;
 }) {
   const value = useRef(new Animated.Value(1)).current;
   const reduced = useReducedMotion();
   useEffect(() => {
-    if (reduced) {
+    if (reduced || !animate) {
       value.setValue(1);
       return;
     }
@@ -92,7 +94,7 @@ export function Reveal({
     });
     animation.start();
     return () => animation.stop();
-  }, [identity, reduced, value]);
+  }, [identity, reduced, value, animate]);
   return (
     <Animated.View
       style={[

@@ -1,6 +1,13 @@
 import { useEffect, useState } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-export type Message = { text: string; own: boolean };
+import type { PhotoKey } from "./data";
+export type Message = {
+  text: string;
+  own: boolean;
+  image?: PhotoKey;
+  imageDescription?: string;
+  storyCreator?: string;
+};
 export type Story = {
   id: string;
   uri: string;

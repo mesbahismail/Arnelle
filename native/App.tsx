@@ -5,6 +5,8 @@ import { StoryViewer } from "./src/story-viewer";
 import { ViewerReplyBar } from "./src/viewer-reply-bar";
 import { StartupLogo } from "./src/brand";
 import { EntryBackground } from "./src/entry-background";
+import { communityPosts, type CommunityPost } from "./src/community-posts";
+import { conversationMessages, conversationPreview } from "./src/conversations";
 import { natureDemoVideoSource } from "./src/playback";
 import { Text, TextInput, useAppFonts } from "./src/typography";
 import React, { useEffect, useRef, useState } from "react";
@@ -95,6 +97,10 @@ const tabs: { title: Tab; icon: IconName }[] = [
   { title: "Messaging", icon: "chatbubbles" },
   { title: "Profile", icon: "person-circle" },
 ];
+const postCountFormatter = new Intl.NumberFormat("en", {
+  notation: "compact",
+  maximumFractionDigits: 1,
+});
 export default function App() {
   const [fontsLoaded, fontError] = useAppFonts();
   const app = (
@@ -296,6 +302,19 @@ function RNL() {
       .toLowerCase()
       .includes(search.toLowerCase()),
   );
+  const communityFeed: CommunityPost[] = [
+    ...(state.posts[community.id] || []).map((text, index, posts) => ({
+      id: `post-local-${community.id}-${posts.length - index}`,
+      author: state.handle,
+      avatar: 2,
+      time: "Just now",
+      text,
+      images: [],
+      likes: 0,
+      comments: 0,
+    })),
+    ...(communityPosts[community.id] || []),
+  ];
   if (!ready) return <StartupLogo />;
   if (!authenticated)
     return (
@@ -909,186 +928,181 @@ function RNL() {
                   style={{ flex: 1 }}
                   behavior={Platform.OS === "ios" ? "padding" : undefined}
                 >
-                  <ScrollView contentContainerStyle={{ paddingBottom: 30 }}>
-                    {[
-                      ...(state.posts[community.id] || []),
-                      "A reminder to make something just for the joy of making it. What are you working on today?",
-                      "A little glimpse into my creative world. Falling in love with these colors again.",
-                    ].map((p, i) => (
-                      <View style={st.post} key={i}>
-                        <View style={s.row}>
-                          <Avatar index={i % 6} size={36} />
-                          <View style={{ flex: 1 }}>
-                            <Text style={s.text}>
-                              @
-                              {i < (state.posts[community.id]?.length || 0)
-                                ? state.handle
-                                : i % 2
-                                  ? "mariam"
-                                  : "jackyjones"}
-                            </Text>
-                            <Text style={s.muted}>2 min ago</Text>
-                          </View>
-                          <IconButton
-                            name="ellipsis-vertical"
-                            label="Post details"
-                            onPress={() => notice("Community demo post")}
-                            size={32}
-                          />
-                        </View>
-                        <Text
-                          style={[
-                            s.text,
-                            { lineHeight: 24, marginVertical: 20 },
-                          ]}
-                        >
-                          {p}
-                        </Text>
-                        {i === (state.posts[community.id]?.length || 0) + 1 && (
-                          <View
-                            style={{
-                              flexDirection: "row",
-                              gap: 8,
-                              height: 208,
-                            }}
-                          >
-                            <Image
-                              source={{ uri: photos[community.image] }}
-                              style={{
-                                flex: 1.5,
-                                height: 208,
-                                borderRadius: 10,
-                              }}
-                            />
-                            <View style={{ flex: 1, gap: 8 }}>
-                              <Image
-                                source={{ uri: photos.art }}
-                                style={{
-                                  flex: 1,
-                                  width: "100%",
-                                  borderRadius: 10,
-                                }}
-                              />
-                              <Image
-                                source={{ uri: photos.pottery }}
-                                style={{
-                                  flex: 1,
-                                  width: "100%",
-                                  borderRadius: 10,
-                                }}
-                              />
+                  <View style={{ flex: 1 }}>
+                    <ScrollView
+                      keyboardShouldPersistTaps="handled"
+                      contentContainerStyle={{ paddingBottom: insets.bottom + 112 }}
+                    >
+                      {communityFeed.map((p) => (
+                        <View style={st.post} key={p.id} testID="community-post">
+                          <View style={s.row}>
+                            <Avatar index={p.avatar} size={36} />
+                            <View style={{ flex: 1 }}>
+                              <Text style={s.text}>@{p.author}</Text>
+                              <Text style={s.muted}>{p.time}</Text>
                             </View>
-                          </View>
-                        )}
-                        <View
-                          style={[
-                            s.row,
-                            { justifyContent: "space-around", marginTop: 20 },
-                          ]}
-                        >
-                          <Pressable
-                            style={s.row}
-                            onPress={() =>
-                              toggle("liked", `post-${community.id}-${i}`)
-                            }
-                          >
-                            <Icon
-                              name="heart"
-                              color={
-                                state.liked.includes(
-                                  `post-${community.id}-${i}`,
-                                )
-                                  ? colors.accent
-                                  : colors.text
-                              }
+                            <IconButton
+                              name="ellipsis-vertical"
+                              label="Post details"
+                              onPress={() => notice("Community demo post")}
+                              size={32}
                             />
-                            <Text style={s.text}>
-                              {state.liked.includes(`post-${community.id}-${i}`)
-                                ? "12.3k"
-                                : "12.2k"}
-                            </Text>
-                          </Pressable>
-                          <Pressable
-                            style={s.row}
-                            onPress={() => setDraft("@mariam ")}
+                          </View>
+                          <Text style={[s.text, { lineHeight: 24, marginVertical: 20 }]}>
+                            {p.text}
+                          </Text>
+                          {p.images.length > 0 && (
+                            <View
+                              style={{
+                                flexDirection: "row",
+                                gap: 8,
+                                height: p.images.length === 1 ? 248 : 208,
+                              }}
+                            >
+                              <Image
+                                source={{ uri: photos[p.images[0]] }}
+                                style={{
+                                  flex: p.images.length === 3 ? 1.5 : 1,
+                                  height: "100%",
+                                  borderRadius: 10,
+                                }}
+                              />
+                              {p.images.length > 1 && (
+                                <View style={{ flex: 1, gap: 8 }}>
+                                  {p.images.slice(1).map((photo, index) => (
+                                    <Image
+                                      key={`${photo}-${index}`}
+                                      source={{ uri: photos[photo] }}
+                                      style={{
+                                        flex: 1,
+                                        width: "100%",
+                                        borderRadius: 10,
+                                      }}
+                                    />
+                                  ))}
+                                </View>
+                              )}
+                            </View>
+                          )}
+                          <View
+                            style={[
+                              s.row,
+                              { justifyContent: "space-around", marginTop: 20 },
+                            ]}
                           >
-                            <Icon name="chatbox" />
-                            <Text style={s.text}>244</Text>
-                          </Pressable>
-                          <Pressable
-                            style={s.row}
-                            onPress={() =>
-                              Share.share({
-                                message: `Join ${community.name} on RNL.`,
-                              })
-                            }
-                          >
-                            <Icon name="arrow-redo" />
-                            <Text style={s.text}>Share</Text>
-                          </Pressable>
+                            <Pressable
+                              style={s.row}
+                              accessibilityRole="button"
+                              accessibilityLabel={`Like post by ${p.author}`}
+                              onPress={() => toggle("liked", p.id)}
+                            >
+                              <Icon
+                                name="heart"
+                                color={
+                                  state.liked.includes(p.id) ? colors.accent : colors.text
+                                }
+                              />
+                              <Text style={s.text}>
+                                {postCountFormatter.format(
+                                  p.likes + (state.liked.includes(p.id) ? 1 : 0),
+                                )}
+                              </Text>
+                            </Pressable>
+                            <Pressable
+                              style={s.row}
+                              onPress={() => setDraft(`@${p.author} `)}
+                            >
+                              <Icon name="chatbox" />
+                              <Text style={s.text}>{p.comments}</Text>
+                            </Pressable>
+                            <Pressable
+                              style={s.row}
+                              onPress={() =>
+                                Share.share({
+                                  message: `Join ${community.name} on RNL.`,
+                                })
+                              }
+                            >
+                              <Icon name="arrow-redo" />
+                              <Text style={s.text}>Share</Text>
+                            </Pressable>
+                          </View>
                         </View>
-                      </View>
-                    ))}
-                  </ScrollView>
-                  <BlurView
-                    intensity={65}
-                    tint="dark"
-                    style={[
-                      st.composer,
-                      {
-                        borderWidth: 1,
-                        borderColor: "#ffffff55",
-                        borderRadius: 32,
-                        margin: 16,
-                        marginBottom: insets.bottom + 12,
-                        padding: 8,
-                      },
-                    ]}
-                  >
-                    <IconButton
-                      name="camera"
-                      label="Add community photo"
-                      onPress={openCamera}
-                      size={36}
-                    />
-                    <TextInput
-                      value={draft}
-                      onChangeText={setDraft}
-                      style={st.composerInput}
-                      placeholder="Add something…"
-                      placeholderTextColor={colors.muted}
-                    />
-                    <IconButton
-                      name="add"
-                      label="Attach to community post"
-                      onPress={() =>
-                        setDraft((value) =>
-                          value ? value : "Sharing a little inspiration ✨ ",
-                        )
-                      }
-                      size={36}
-                    />
-                    <IconButton
-                      gradient
-                      name="send"
-                      label="Publish post"
-                      onPress={() => {
-                        if (draft.trim()) {
-                          setState((prev) => ({
-                            ...prev,
-                            posts: {
-                              ...prev.posts,
-                              [community.id]: [
-                                draft.trim(),
-                                ...(prev.posts[community.id] || []),
-                              ],
-                            },
-                          }));
-                          setDraft("");
-                        }
-                      }}
-                    />
-                  </BlurView>
+                      ))}
+                    </ScrollView>
+                    <View
+                      pointerEvents="box-none"
+                      style={[
+                        st.communityComposerOverlay,
+                        { paddingBottom: insets.bottom + 12 },
+                      ]}
+                    >
+                      <LinearGradient
+                        pointerEvents="none"
+                        colors={["#11111100", "#11111170", "#111111e8"]}
+                        locations={[0, 0.45, 1]}
+                        style={[StyleSheet.absoluteFillObject, { top: -56 }]}
+                      />
+                      <BlurView
+                        intensity={45}
+                        tint="systemUltraThinMaterialDark"
+                        style={st.communityComposerGlass}
+                      >
+                        <LinearGradient
+                          pointerEvents="none"
+                          colors={["#ffffff14", "#ffffff04", "#ffffff08"]}
+                          style={StyleSheet.absoluteFillObject}
+                        />
+                        <IconButton
+                          name="camera"
+                          label="Add community photo"
+                          onPress={openCamera}
+                          size={36}
+                        />
+                        <TextInput
+                          accessibilityLabel="Community post"
+                          value={draft}
+                          onChangeText={setDraft}
+                          style={[
+                            st.composerInput,
+                            { minWidth: 0, backgroundColor: "transparent" },
+                          ]}
+                          placeholder="Add something…"
+                          placeholderTextColor={colors.muted}
+                        />
+                        <IconButton
+                          name="add"
+                          label="Attach to community post"
+                          onPress={() =>
+                            setDraft((value) =>
+                              value ? value : "Sharing a little inspiration ✨ ",
+                            )
+                          }
+                          size={36}
+                        />
+                        <IconButton
+                          gradient
+                          name="send"
+                          label="Publish post"
+                          onPress={() => {
+                            if (draft.trim()) {
+                              setState((prev) => ({
+                                ...prev,
+                                posts: {
+                                  ...prev.posts,
+                                  [community.id]: [
+                                    draft.trim(),
+                                    ...(prev.posts[community.id] || []),
+                                  ],
+                                },
+                              }));
+                              setDraft("");
+                            }
+                          }}
+                        />
+                      </BlurView>
+                    </View>
+                  </View>
                 </KeyboardAvoidingView>
               )}
               {screen === "Messaging" && (
@@ -1145,16 +1159,11 @@ function RNL() {
                                 },
                               ]}
                             >
-                              {state.messages[c.id]?.at(-1)?.text ||
-                                (i < 2
-                                  ? "▶ Tap to view"
-                                  : i === 2
-                                    ? "2 new messages"
-                                    : "That sounds like a plan!")}
+                              {conversationPreview(c.id, state.messages[c.id])}
                             </Text>
                           </View>
                           <Text style={{ fontSize: 9, color: colors.muted }}>
-                            11M AGO
+                            {["2M AGO", "8M AGO", "12M AGO", "25M AGO", "1H AGO", "2H AGO"][i]}
                           </Text>
                         </Pressable>
                       </View>
@@ -1174,70 +1183,91 @@ function RNL() {
                     contentContainerStyle={st.chatContent}
                   >
                     <Text style={[s.muted, st.centerText]}>TODAY, 12:20</Text>
-                    {(
-                      state.messages[chat.id] || [
-                        {
-                          text: "Hey! Have you seen the Art World community?",
-                          own: false,
-                        },
-                        {
-                          text: "Yes! So much inspiration in one place ✨",
-                          own: true,
-                        },
-                        {
-                          text: "We should make something together this weekend.",
-                          own: false,
-                        },
-                      ]
-                    ).map((m, i) => (
-                      <View
-                        key={i}
-                        style={[st.message, m.own && st.ownMessage]}
-                      >
-                        <Text
-                          style={[s.text, { fontSize: 14, lineHeight: 21 }]}
+                    {conversationMessages(chat.id, state.messages[chat.id]).map((m, i) =>
+                      m.storyCreator ? (
+                        <Pressable
+                          key={i}
+                          testID="chat-message"
+                          accessibilityRole="button"
+                          accessibilityLabel="Open shared story"
+                          onPress={() =>
+                            setActiveStory(
+                              creators.find((creator) => creator.id === m.storyCreator) ??
+                                null,
+                            )
+                          }
+                          style={[
+                            st.message,
+                            m.own && st.ownMessage,
+                            {
+                              flexDirection: "row",
+                              alignItems: "center",
+                              gap: 12,
+                              padding: 10,
+                            },
+                          ]}
                         >
-                          {m.text}
-                        </Text>
-                      </View>
-                    ))}
-                    <Pressable
-                      accessibilityRole="button"
-                      accessibilityLabel="Open shared reel"
-                      onPress={() => setActiveReel(reels[0])}
-                      style={[
-                        st.message,
-                        st.ownMessage,
-                        {
-                          flexDirection: "row",
-                          alignItems: "center",
-                          gap: 12,
-                          padding: 10,
-                        },
-                      ]}
-                    >
-                      <Image
-                        source={{ uri: photos[reels[0].image] }}
-                        style={{ width: 52, height: 72, borderRadius: 10 }}
-                      />
-                      <View>
-                        <Text style={[s.text, { marginBottom: 8 }]}>
-                          A moment worth sharing
-                        </Text>
-                        <View style={s.row}>
-                          <Icon name="play" size={18} />
-                          <Text style={s.text}>Open video</Text>
+                          <View
+                            style={{
+                              width: 52,
+                              height: 52,
+                              alignItems: "center",
+                              justifyContent: "center",
+                            }}
+                          >
+                            <Icon name="ellipse-outline" size={50} />
+                            <View style={{ position: "absolute" }}>
+                              <Icon name="play" size={20} />
+                            </View>
+                          </View>
+                          <View>
+                            <Text style={[s.text, { marginBottom: 8 }]}>{m.text}</Text>
+                            <View style={s.row}>
+                              <Text style={s.text}>Open story</Text>
+                            </View>
+                          </View>
+                        </Pressable>
+                      ) : (
+                        <View
+                          key={i}
+                          testID="chat-message"
+                          style={[
+                            st.message,
+                            m.own && st.ownMessage,
+                            m.image && { padding: 6, width: Math.min(width * 0.68, 260) },
+                          ]}
+                        >
+                          {m.image && (
+                            <Image
+                              testID="chat-photo"
+                              accessibilityLabel={
+                                m.imageDescription || `Photo from ${chat.handle}`
+                              }
+                              source={{ uri: photos[m.image] }}
+                              style={{ width: "100%", height: 200, borderRadius: 14 }}
+                              resizeMode="cover"
+                            />
+                          )}
+                          {!!m.text && (
+                            <Text
+                              style={[
+                                s.text,
+                                { fontSize: 14, lineHeight: 21 },
+                                m.image && { margin: 8 },
+                              ]}
+                            >
+                              {m.text}
+                            </Text>
+                          )}
                         </View>
-                      </View>
-                    </Pressable>
+                      ),
+                    )}
                   </ScrollView>
                   <View
-                    style={[
-                      st.composer,
-                      { paddingBottom: Math.max(insets.bottom, 16) },
-                    ]}
+                    style={[st.composer, { paddingBottom: Math.max(insets.bottom, 16) }]}
                   >
                     <TextInput
+                      accessibilityLabel="Chat reply"
                       style={st.composerInput}
                       placeholder="Type a reply…"
                       placeholderTextColor={colors.muted}
@@ -1257,12 +1287,7 @@ function RNL() {
                             messages: {
                               ...prev.messages,
                               [chat.id]: [
-                                ...(prev.messages[chat.id] || [
-                                  {
-                                    text: "Hey! Nice to meet you 👋",
-                                    own: false,
-                                  },
-                                ]),
+                                ...(prev.messages[chat.id] || []),
                                 { text, own: true },
                               ],
                             },
@@ -1644,7 +1669,7 @@ function RNL() {
                   tint="dark"
                   style={[
                     st.tabBar,
-                    { paddingBottom: Math.max(insets.bottom, 16) },
+                    { paddingBottom: Math.max(insets.bottom - 20, 0) },
                   ]}
                 >
                   <LinearGradient
@@ -2429,7 +2454,7 @@ const st = StyleSheet.create({
   queryActive: { borderBottomWidth: 2, borderBottomColor: colors.accent },
   tabBar: {
     // Overlap the safe-area edge to avoid a seam when the preview is scaled.
-    height: 109,
+    height: 89,
     position: "absolute",
     bottom: -1,
     left: 0,
@@ -2558,6 +2583,25 @@ const st = StyleSheet.create({
     borderColor: colors.accent,
     borderBottomLeftRadius: 20,
     borderBottomRightRadius: 4,
+  },
+  communityComposerOverlay: {
+    position: "absolute",
+    bottom: 0,
+    left: 0,
+    right: 0,
+    paddingHorizontal: 16,
+    paddingTop: 16,
+  },
+  communityComposerGlass: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    padding: 8,
+    borderRadius: 32,
+    borderWidth: 1,
+    borderColor: "#ffffff40",
+    backgroundColor: "transparent",
+    overflow: "hidden",
   },
   composer: {
     flexDirection: "row",

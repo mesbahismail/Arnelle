@@ -172,6 +172,9 @@ function RNL() {
   const [demoAudio] = useState(createDemoMelody);
   const player = useAudioPlayer(demoAudio);
   const insets = useSafeAreaInsets();
+  // The tab bar extends through the bottom safe area, so scrolling tab
+  // screens need that inset on top of their usual clearance.
+  const tabBarClearance = 110 + insets.bottom;
   const { width } = useWindowDimensions();
   const cardWidth = (width - 32 - 8) / 2;
   const notice = (text: string) => {
@@ -341,7 +344,10 @@ function RNL() {
       {!state.onboarded && <EntryBackground blurred />}
       <SafeAreaView
         style={[s.root, { backgroundColor: "transparent" }]}
-        edges={["top"]}
+        // An explicit record, not ["top"]: the library's web SafeAreaView
+        // treats unlisted array edges as "additive", which padded the bottom
+        // by 34pt and lifted the tab bar off the screen edge.
+        edges={{ top: "additive", bottom: "off", left: "off", right: "off" }}
       >
         <Reveal
           identity={`${screen}-${step}-${state.onboarded}`}
@@ -650,7 +656,7 @@ function RNL() {
                   showsVerticalScrollIndicator={false}
                   contentContainerStyle={{
                     paddingVertical: 24,
-                    paddingBottom: 110,
+                    paddingBottom: tabBarClearance,
                   }}
                 >
                   <View style={st.sectionPad}>
@@ -746,7 +752,7 @@ function RNL() {
                 <ScrollView
                   contentContainerStyle={[
                     s.content,
-                    { paddingHorizontal: 16, paddingBottom: 110 },
+                    { paddingHorizontal: 16, paddingBottom: tabBarClearance },
                   ]}
                 >
                   <SearchField
@@ -812,7 +818,7 @@ function RNL() {
               )}
               {screen === "Followers" && (
                 <ScrollView
-                  contentContainerStyle={[s.content, { paddingBottom: 110 }]}
+                  contentContainerStyle={[s.content, { paddingBottom: tabBarClearance }]}
                 >
                   {creators.map(creatorRow)}
                 </ScrollView>
@@ -824,7 +830,7 @@ function RNL() {
                     {
                       paddingHorizontal: 16,
                       paddingTop: 8,
-                      paddingBottom: 110,
+                      paddingBottom: tabBarClearance,
                     },
                   ]}
                 >
@@ -1109,7 +1115,7 @@ function RNL() {
                 <ScrollView
                   contentContainerStyle={[
                     s.content,
-                    { paddingHorizontal: 16, paddingBottom: 110 },
+                    { paddingHorizontal: 16, paddingBottom: tabBarClearance },
                   ]}
                 >
                   <SearchField
@@ -1300,7 +1306,7 @@ function RNL() {
                 </KeyboardAvoidingView>
               )}
               {screen === "Profile" && (
-                <ScrollView contentContainerStyle={{ paddingBottom: 110 }}>
+                <ScrollView contentContainerStyle={{ paddingBottom: tabBarClearance }}>
                   <View style={st.profile}>
                     <Avatar index={2} size={64} ring />
                     <View style={{ flex: 1 }}>
@@ -1669,7 +1675,10 @@ function RNL() {
                   tint="dark"
                   style={[
                     st.tabBar,
-                    { paddingBottom: Math.max(insets.bottom - 20, 0) },
+                    {
+                      height: 89 + insets.bottom,
+                      paddingBottom: Math.max(insets.bottom - 20, 0),
+                    },
                   ]}
                 >
                   <LinearGradient
@@ -1683,7 +1692,7 @@ function RNL() {
                     colors={["#ef79561a", "#71528120", "#57989a20"]}
                     start={{ x: 0, y: 0 }}
                     end={{ x: 1, y: 1 }}
-                    style={[StyleSheet.absoluteFillObject, { top: 40 }]}
+                    style={StyleSheet.absoluteFillObject}
                   />
                   {tabs.map((t) => (
                     <Pressable
